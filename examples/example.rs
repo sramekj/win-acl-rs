@@ -5,8 +5,10 @@ use win_acl_rs::sd::SecurityDescriptor;
 pub fn main() {
     let path = NamedTempFile::new().unwrap().into_temp_path();
     debug_assert!(path.exists());
+    let is_admin = is_admin();
+    debug_assert!(is_admin.is_ok());
 
-    if !is_admin() {
+    if !is_admin.unwrap() {
         println!("Not running as an admin");
         let sd = SecurityDescriptor::from_path(&path);
         println!("{:?}", sd);

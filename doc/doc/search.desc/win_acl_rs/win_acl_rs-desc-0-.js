@@ -1,0 +1,1 @@
+searchState.loadedDescShard("win_acl_rs", 0, "This crate provides simple and safe abstraction over …\nContains the error value\nContains the success value\nReturns the argument unchanged.\nCalls <code>U::from(self)</code>.\nReturns the argument unchanged.\nCalls <code>U::from(self)</code>.")

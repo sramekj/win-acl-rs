@@ -1,3 +1,7 @@
+//! This crate provides simple and safe abstraction over Windows ACLs and security descriptors.
+//!
+//! See /examples folder
+
 #![cfg(windows)]
 
 pub mod acl;

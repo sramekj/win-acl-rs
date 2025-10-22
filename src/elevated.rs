@@ -53,13 +53,13 @@ pub fn enable_se_security_privilege() -> Result<(), WinError> {
     Ok(())
 }
 
-pub fn is_admin() -> bool {
+pub fn is_admin() -> Result<bool, WinError> {
     unsafe {
         let mut token_handle = null_mut();
         let mut token_elevation = TOKEN_ELEVATION { TokenIsElevated: 0 };
 
         if OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &mut token_handle) == 0 {
-            return false;
+            return Err(GetLastError().into());
         }
 
         let mut size = 0;
@@ -72,11 +72,11 @@ pub fn is_admin() -> bool {
         ) == 0
         {
             CloseHandle(token_handle);
-            return false;
+            return Err(GetLastError().into());
         }
 
         CloseHandle(token_handle);
-        token_elevation.TokenIsElevated != 0
+        Ok(token_elevation.TokenIsElevated != 0)
     }
 }
 
