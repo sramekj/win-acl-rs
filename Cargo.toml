@@ -1,0 +1,19 @@
+[package]
+name = "win-acl-rs"
+version = "0.1.0"
+edition = "2024"
+authors = ["Jan Šrámek <jan.sramek.ix@gmail.com>"]
+description = "A simple Windows ACL API abstraction"
+documentation = ""
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/sramekj/win-acl-rs"
+readme = "README.md"
+keywords = ["windows", "security", "acl", "permissions", "win32"]
+categories = ["os::windows-apis", "os"]
+
+[lib]
+name = "win_acl_rs"
+path = "src/lib.rs"
+
+[dependencies]
+windows-sys = { version = "^0.61", features = [ "Win32_Security", "Win32_Security_Authentication" ]}
