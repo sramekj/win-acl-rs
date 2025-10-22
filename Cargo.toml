@@ -16,4 +16,4 @@ name = "win_acl_rs"
 path = "src/lib.rs"
 
 [dependencies]
-windows-sys = { version = "^0.61", features = [ "Win32_Security", "Win32_Security_Authentication" ]}
+windows-sys = { version = "^0.61", features = ["Win32_Security", "Win32_Security_Authentication", "Win32_Security_Authorization"] }
