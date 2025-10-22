@@ -1,4 +1,5 @@
 use tempfile::NamedTempFile;
+use win_acl_rs::elevated::sd::ElevatedSecurityDescriptor;
 use win_acl_rs::elevated::{enable_se_security_privilege, is_admin};
 use win_acl_rs::sd::SecurityDescriptor;
 
@@ -17,7 +18,7 @@ pub fn main() {
         let res = enable_se_security_privilege();
         println!("enabled: {:?}", res);
 
-        let sd = SecurityDescriptor::from_path_elevated(&path);
+        let sd = ElevatedSecurityDescriptor::from_path(&path);
         println!("{:?}", sd);
     }
 }

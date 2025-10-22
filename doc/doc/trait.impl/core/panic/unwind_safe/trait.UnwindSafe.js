@@ -1,9 +1,9 @@
 (function() {
-    var implementors = Object.fromEntries([["win_acl_rs",[["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.90.0/core/panic/unwind_safe/trait.UnwindSafe.html\" title=\"trait core::panic::unwind_safe::UnwindSafe\">UnwindSafe</a> for <a class=\"struct\" href=\"win_acl_rs/error/struct.WinError.html\" title=\"struct win_acl_rs::error::WinError\">WinError</a>",1,["win_acl_rs::error::WinError"]],["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.90.0/core/panic/unwind_safe/trait.UnwindSafe.html\" title=\"trait core::panic::unwind_safe::UnwindSafe\">UnwindSafe</a> for <a class=\"struct\" href=\"win_acl_rs/sd/struct.SecurityDescriptor.html\" title=\"struct win_acl_rs::sd::SecurityDescriptor\">SecurityDescriptor</a>",1,["win_acl_rs::sd::SecurityDescriptor"]]]]]);
+    var implementors = Object.fromEntries([["win_acl_rs",[["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.90.0/core/panic/unwind_safe/trait.UnwindSafe.html\" title=\"trait core::panic::unwind_safe::UnwindSafe\">UnwindSafe</a> for <a class=\"struct\" href=\"win_acl_rs/elevated/sd/struct.ElevatedSecurityDescriptor.html\" title=\"struct win_acl_rs::elevated::sd::ElevatedSecurityDescriptor\">ElevatedSecurityDescriptor</a>",1,["win_acl_rs::elevated::sd::ElevatedSecurityDescriptor"]],["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.90.0/core/panic/unwind_safe/trait.UnwindSafe.html\" title=\"trait core::panic::unwind_safe::UnwindSafe\">UnwindSafe</a> for <a class=\"struct\" href=\"win_acl_rs/error/struct.WinError.html\" title=\"struct win_acl_rs::error::WinError\">WinError</a>",1,["win_acl_rs::error::WinError"]],["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.90.0/core/panic/unwind_safe/trait.UnwindSafe.html\" title=\"trait core::panic::unwind_safe::UnwindSafe\">UnwindSafe</a> for <a class=\"struct\" href=\"win_acl_rs/sd/struct.SecurityDescriptor.html\" title=\"struct win_acl_rs::sd::SecurityDescriptor\">SecurityDescriptor</a>",1,["win_acl_rs::sd::SecurityDescriptor"]]]]]);
     if (window.register_implementors) {
         window.register_implementors(implementors);
     } else {
         window.pending_implementors = implementors;
     }
 })()
-//{"start":57,"fragment_lengths":[739]}
+//{"start":57,"fragment_lengths":[1177]}

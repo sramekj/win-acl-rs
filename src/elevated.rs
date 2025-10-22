@@ -92,10 +92,12 @@ pub mod sd {
         SACL_SECURITY_INFORMATION,
     };
 
-    impl SecurityDescriptor {
+    pub struct ElevatedSecurityDescriptor;
+
+    impl ElevatedSecurityDescriptor {
         // the process requires "SE_SECURITY_NAME" (SeSecurityPrivilege) privilege, would otherwise return WIN32_ERROR(1314) => "A required privilege is not held by the client"
         // you can run "whoami /priv" to check it. You typically need to run the process as an Administrator and enable it using enable_se_security_privilege().
-        pub fn from_path_elevated<P>(path: P) -> Result<Self, WinError>
+        pub fn from_path<P>(path: P) -> Result<SecurityDescriptor, WinError>
         where
             P: AsRef<Path>,
         {
