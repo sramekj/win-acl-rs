@@ -3,8 +3,9 @@ use std::ptr;
 use std::ptr::null_mut;
 use windows_sys::Win32::Foundation::{CloseHandle, ERROR_SUCCESS, GetLastError, HANDLE, LUID};
 use windows_sys::Win32::Security::{
-    AdjustTokenPrivileges, LookupPrivilegeValueW, SE_PRIVILEGE_ENABLED, SE_SECURITY_NAME,
-    TOKEN_ADJUST_PRIVILEGES, TOKEN_PRIVILEGES, TOKEN_QUERY,
+    AdjustTokenPrivileges, GetTokenInformation, LookupPrivilegeValueW, SE_PRIVILEGE_ENABLED,
+    SE_SECURITY_NAME, TOKEN_ADJUST_PRIVILEGES, TOKEN_ELEVATION, TOKEN_PRIVILEGES, TOKEN_QUERY,
+    TokenElevation,
 };
 use windows_sys::Win32::System::Threading::{GetCurrentProcess, OpenProcessToken};
 
@@ -50,6 +51,33 @@ pub fn enable_se_security_privilege() -> Result<(), WinError> {
         }
     }
     Ok(())
+}
+
+pub fn is_admin() -> bool {
+    unsafe {
+        let mut token_handle = null_mut();
+        let mut token_elevation = TOKEN_ELEVATION { TokenIsElevated: 0 };
+
+        if OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &mut token_handle) == 0 {
+            return false;
+        }
+
+        let mut size = 0;
+        if GetTokenInformation(
+            token_handle,
+            TokenElevation,
+            &mut token_elevation as *mut _ as *mut std::ffi::c_void,
+            size_of::<TOKEN_ELEVATION>() as u32,
+            &mut size,
+        ) == 0
+        {
+            CloseHandle(token_handle);
+            return false;
+        }
+
+        CloseHandle(token_handle);
+        token_elevation.TokenIsElevated != 0
+    }
 }
 
 pub mod sd {

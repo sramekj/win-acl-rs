@@ -17,18 +17,18 @@ use windows_sys::core::PCWSTR;
 
 #[must_use]
 pub struct SecurityDescriptor {
-    p_sd: PSECURITY_DESCRIPTOR,
-    p_owner_sid: PSID,
-    p_group_sid: PSID,
-    p_dacl: *mut ACL,
-    p_sacl: *mut ACL,
+    sd_ptr: PSECURITY_DESCRIPTOR,
+    owner_sid_ptr: PSID,
+    group_sid_ptr: PSID,
+    dacl_ptr: *mut ACL,
+    sacl_ptr: *mut ACL,
 }
 
 impl Drop for SecurityDescriptor {
     fn drop(&mut self) {
         unsafe {
-            if !self.p_sd.is_null() {
-                let freed = LocalFree(self.p_sd as _);
+            if !self.sd_ptr.is_null() {
+                let freed = LocalFree(self.sd_ptr as _);
                 debug_assert!(freed.is_null(), "LocalFree failed in Drop!");
             }
         }
@@ -38,11 +38,11 @@ impl Drop for SecurityDescriptor {
 impl std::fmt::Debug for SecurityDescriptor {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("SecurityDescriptor")
-            .field("p_sd", &self.p_sd)
-            .field("p_owner_sid", &self.p_owner_sid)
-            .field("p_group_sid", &self.p_group_sid)
-            .field("p_dacl", &self.p_dacl)
-            .field("p_sacl", &self.p_sacl)
+            .field("sd_ptr", &self.sd_ptr)
+            .field("owner_sid_ptr", &self.owner_sid_ptr)
+            .field("group_sid_ptr", &self.group_sid_ptr)
+            .field("dacl_ptr", &self.dacl_ptr)
+            .field("sacl_ptr", &self.sacl_ptr)
             .finish()
     }
 }
@@ -69,15 +69,15 @@ impl SecurityDescriptor {
         let mut sd_ptr: PSECURITY_DESCRIPTOR = ptr::null_mut();
         let mut dacl_ptr: *mut ACL = ptr::null_mut();
         let mut sacl_ptr: *mut ACL = ptr::null_mut();
-        let mut owner_ptr: PSID = ptr::null_mut();
-        let mut group_ptr: PSID = ptr::null_mut();
+        let mut owner_sid_ptr: PSID = ptr::null_mut();
+        let mut group_sid_ptr: PSID = ptr::null_mut();
         let err = unsafe {
             GetNamedSecurityInfoW(
                 obj_name,
                 obj_type,
                 flags,
-                &mut owner_ptr,
-                &mut group_ptr,
+                &mut owner_sid_ptr,
+                &mut group_sid_ptr,
                 &mut dacl_ptr,
                 &mut sacl_ptr,
                 &mut sd_ptr,
@@ -89,11 +89,11 @@ impl SecurityDescriptor {
         }
 
         Ok(Self {
-            p_sd: sd_ptr,
-            p_dacl: dacl_ptr,
-            p_sacl: sacl_ptr,
-            p_owner_sid: owner_ptr,
-            p_group_sid: group_ptr,
+            sd_ptr,
+            dacl_ptr,
+            sacl_ptr,
+            owner_sid_ptr,
+            group_sid_ptr,
         })
     }
 }
