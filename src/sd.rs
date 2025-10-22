@@ -6,11 +6,14 @@ use std::ffi::OsStr;
 use std::path::Path;
 use std::ptr;
 use windows_sys::Win32::Foundation::{ERROR_SUCCESS, LocalFree};
-use windows_sys::Win32::Security::Authorization::{GetNamedSecurityInfoW, SE_FILE_OBJECT};
-use windows_sys::Win32::Security::{
-    ACL, DACL_SECURITY_INFORMATION, GROUP_SECURITY_INFORMATION, OWNER_SECURITY_INFORMATION,
-    PSECURITY_DESCRIPTOR, PSID, SACL_SECURITY_INFORMATION,
+use windows_sys::Win32::Security::Authorization::{
+    GetNamedSecurityInfoW, SE_FILE_OBJECT, SE_OBJECT_TYPE,
 };
+use windows_sys::Win32::Security::{
+    ACL, DACL_SECURITY_INFORMATION, GROUP_SECURITY_INFORMATION, OBJECT_SECURITY_INFORMATION,
+    OWNER_SECURITY_INFORMATION, PSECURITY_DESCRIPTOR, PSID,
+};
+use windows_sys::core::PCWSTR;
 
 #[must_use]
 pub struct SecurityDescriptor {
@@ -50,6 +53,19 @@ impl SecurityDescriptor {
         P: AsRef<Path>,
     {
         let wide_path = WideCString::new(OsStr::new(path.as_ref()));
+
+        Self::create_sd(
+            wide_path.as_ptr(),
+            SE_FILE_OBJECT,
+            DACL_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | OWNER_SECURITY_INFORMATION,
+        )
+    }
+
+    pub(crate) fn create_sd(
+        obj_name: PCWSTR,
+        obj_type: SE_OBJECT_TYPE,
+        flags: OBJECT_SECURITY_INFORMATION,
+    ) -> Result<Self, WinError> {
         let mut sd_ptr: PSECURITY_DESCRIPTOR = ptr::null_mut();
         let mut dacl_ptr: *mut ACL = ptr::null_mut();
         let mut sacl_ptr: *mut ACL = ptr::null_mut();
@@ -57,13 +73,9 @@ impl SecurityDescriptor {
         let mut group_ptr: PSID = ptr::null_mut();
         let err = unsafe {
             GetNamedSecurityInfoW(
-                wide_path.as_ptr(),
-                SE_FILE_OBJECT,
-                DACL_SECURITY_INFORMATION
-                    // would return WIN32_ERROR(1314) => "A required privilege is not held by the client"
-                    //| SACL_SECURITY_INFORMATION
-                    | GROUP_SECURITY_INFORMATION
-                    | OWNER_SECURITY_INFORMATION,
+                obj_name,
+                obj_type,
+                flags,
                 &mut owner_ptr,
                 &mut group_ptr,
                 &mut dacl_ptr,

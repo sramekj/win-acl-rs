@@ -1,6 +1,7 @@
 #![cfg(windows)]
 
 pub mod acl;
+pub mod elevated;
 pub mod sd;
 pub mod sid;
 mod utils;
