@@ -5,7 +5,6 @@ mod sd_tests {
     use crate::elevated::is_admin;
     use crate::error::Result;
     use crate::sd::SecurityDescriptor;
-    use std::ffi::OsStr;
     use std::str::FromStr;
     use tempfile::NamedTempFile;
 
@@ -43,7 +42,7 @@ mod sd_tests {
     #[test]
     #[ignore] // would fail on CI
     fn test_sd_from_handle() {
-        let handle = OsStr::new("Microsoft XPS Document Writer");
+        let handle = "Microsoft XPS Document Writer";
         let sd = SecurityDescriptor::from_handle(handle, SE_PRINTER).unwrap();
 
         assert!(sd.is_valid());

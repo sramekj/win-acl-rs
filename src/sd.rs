@@ -5,7 +5,7 @@ use crate::error::WinError;
 use crate::sid::Sid;
 use crate::utils::WideCString;
 use crate::{winapi_bool_call, winapi_call};
-use std::ffi::{OsStr, OsString};
+use std::ffi::OsStr;
 use std::path::Path;
 use std::ptr::null_mut;
 use std::slice::from_raw_parts;
@@ -48,7 +48,7 @@ impl FromStr for SecurityDescriptor {
     type Err = WinError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Self::from_sd_string(OsStr::new(s))
+        Self::from_sd_string(s)
     }
 }
 
@@ -99,9 +99,9 @@ impl SecurityDescriptor {
     /// # Returns
     ///
     /// A `SecurityDescriptor` on success.
-    pub fn from_handle<S>(handle: &S, object_type: SE_OBJECT_TYPE) -> Result<Self, WinError>
+    pub fn from_handle<S>(handle: S, object_type: SE_OBJECT_TYPE) -> Result<Self, WinError>
     where
-        S: AsRef<OsStr> + ?Sized,
+        S: AsRef<str>,
     {
         let wide_string = WideCString::new(handle.as_ref());
         Self::create_sd(
@@ -219,9 +219,9 @@ impl SecurityDescriptor {
     /// # Returns
     ///
     /// A `SecurityDescriptor` on success.
-    pub fn from_sd_string<S>(sd_string: &S) -> Result<Self, WinError>
+    pub fn from_sd_string<S>(sd_string: S) -> Result<Self, WinError>
     where
-        S: AsRef<OsStr> + ?Sized,
+        S: AsRef<str>,
     {
         let wide_str = WideCString::new(sd_string.as_ref());
 
@@ -293,8 +293,8 @@ impl SecurityDescriptor {
     ///
     /// # Returns
     ///
-    /// An `OsString` on success.
-    pub fn as_sd_string(&self) -> Result<OsString, WinError> {
+    /// A `String` on success.
+    pub fn as_sd_string(&self) -> Result<String, WinError> {
         let mut buf_ptr: *mut u16 = null_mut();
         let mut buf_len: u32 = 0;
 
@@ -316,7 +316,7 @@ impl SecurityDescriptor {
             debug_assert!(freed.is_null(), "LocalFree failed in as_sd_string()!");
         }
 
-        Ok(string.as_os_string())
+        Ok(string.as_string())
     }
 
     pub fn owner_sid(&self) -> Option<&Sid> {

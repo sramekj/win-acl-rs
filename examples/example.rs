@@ -1,4 +1,3 @@
-use std::ffi::OsStr;
 use std::str::FromStr;
 use tempfile::NamedTempFile;
 use win_acl_rs::SE_PRINTER;
@@ -23,7 +22,7 @@ pub fn main() -> win_acl_rs::error::Result<()> {
         let sd = SecurityDescriptor::from_str(TEST_SD_STRING)?;
         println!("SD: {:?}", sd);
 
-        let printer_name = OsStr::new("Microsoft XPS Document Writer");
+        let printer_name = "Microsoft XPS Document Writer";
         let sd = SecurityDescriptor::from_handle(printer_name, SE_PRINTER)?;
         println!("SD: {:?}", sd);
         println!("Is valid: {}", sd.is_valid());

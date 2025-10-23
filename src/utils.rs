@@ -27,8 +27,13 @@ impl WideCString {
         Self { inner }
     }
 
+    #[allow(dead_code)]
     pub fn as_os_string(&self) -> OsString {
         OsString::from_wide(self.inner.as_ref())
+    }
+
+    pub fn as_string(&self) -> String {
+        String::from_utf16_lossy(self.inner.as_ref())
     }
 }
 
