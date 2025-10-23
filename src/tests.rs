@@ -1,6 +1,6 @@
 #![cfg(windows)]
 
-mod tests {
+mod sd_tests {
     use crate::SE_PRINTER;
     use crate::elevated::is_admin;
     use crate::error::Result;

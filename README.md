@@ -1,4 +1,3 @@
 # UNDER A CONSTRUCTION... 
-![Rust Windows CI](https://github.com/sramekj/win-acl-rs/actions/workflows/ci.yml/badge.svg)
-
+[![github actions](https://github.com/sramekj/win-acl-rs/workflows/CI/badge.svg)](https://github.com/sramekj/win-acl-rs/actions)
 ## come back later ;)  
