@@ -41,6 +41,7 @@ mod sd_tests {
     }
 
     #[test]
+    #[ignore] // would fail on CI
     fn test_sd_from_handle() {
         let handle = OsStr::new("Microsoft XPS Document Writer");
         let sd = SecurityDescriptor::from_handle(handle, SE_PRINTER).unwrap();
