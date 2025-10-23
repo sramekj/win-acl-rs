@@ -8,7 +8,7 @@ pub mod acl;
 pub mod elevated;
 pub mod sd;
 pub mod sid;
-pub mod utils;
+mod utils;
 
 mod macros;
 

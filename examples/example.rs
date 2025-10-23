@@ -1,10 +1,10 @@
+use std::ffi::OsStr;
 use std::str::FromStr;
 use tempfile::NamedTempFile;
 use win_acl_rs::SE_PRINTER;
 use win_acl_rs::elevated::sd::ElevatedSecurityDescriptor;
 use win_acl_rs::elevated::{enable_se_security_privilege, is_admin};
 use win_acl_rs::sd::SecurityDescriptor;
-use win_acl_rs::utils::WideCString;
 
 pub fn main() -> win_acl_rs::error::Result<()> {
     let path = NamedTempFile::new().unwrap().into_temp_path();
@@ -23,7 +23,7 @@ pub fn main() -> win_acl_rs::error::Result<()> {
         let sd = SecurityDescriptor::from_str(TEST_SD_STRING)?;
         println!("SD: {:?}", sd);
 
-        let printer_name = WideCString::new("Microsoft XPS Document Writer");
+        let printer_name = OsStr::new("Microsoft XPS Document Writer");
         let sd = SecurityDescriptor::from_handle(printer_name, SE_PRINTER)?;
         println!("SD: {:?}", sd);
     } else {

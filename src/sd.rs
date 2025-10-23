@@ -99,9 +99,13 @@ impl SecurityDescriptor {
     /// # Returns
     ///
     /// A `SecurityDescriptor` on success.
-    pub fn from_handle(handle: WideCString, object_type: SE_OBJECT_TYPE) -> Result<Self, WinError> {
+    pub fn from_handle<S>(handle: &S, object_type: SE_OBJECT_TYPE) -> Result<Self, WinError>
+    where
+        S: AsRef<OsStr> + ?Sized,
+    {
+        let wide_string = WideCString::new(handle.as_ref());
         Self::create_sd(
-            handle.as_ptr(),
+            wide_string.as_ptr(),
             object_type,
             OBJECT_SECURITY_INFORMATION::get_safe(),
         )
@@ -211,6 +215,10 @@ impl SecurityDescriptor {
     /// Converts a string-format security descriptor into a valid, functional security descriptor.
     ///
     /// see [MSDN](https://learn.microsoft.com/en-us/windows/win32/secauthz/security-descriptor-string-format)
+    ///
+    /// # Returns
+    ///
+    /// A `SecurityDescriptor` on success.
     pub fn from_sd_string<S>(sd_string: &S) -> Result<Self, WinError>
     where
         S: AsRef<OsStr> + ?Sized,
@@ -282,6 +290,10 @@ impl SecurityDescriptor {
     /// Converts security descriptor into a string format
     ///
     /// see [MSDN](https://learn.microsoft.com/en-us/windows/win32/secauthz/security-descriptor-string-format)
+    ///
+    /// # Returns
+    ///
+    /// An `OsString` on success.
     pub fn as_sd_string(&self) -> Result<OsString, WinError> {
         let mut buf_ptr: *mut u16 = null_mut();
         let mut buf_len: u32 = 0;

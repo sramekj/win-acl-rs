@@ -5,7 +5,7 @@ mod tests {
     use crate::elevated::is_admin;
     use crate::error::Result;
     use crate::sd::SecurityDescriptor;
-    use crate::utils::WideCString;
+    use std::ffi::OsStr;
     use std::str::FromStr;
     use tempfile::NamedTempFile;
 
@@ -42,7 +42,7 @@ mod tests {
 
     #[test]
     fn test_sd_from_handle() {
-        let handle = WideCString::new("Microsoft XPS Document Writer");
+        let handle = OsStr::new("Microsoft XPS Document Writer");
         let sd = SecurityDescriptor::from_handle(handle, SE_PRINTER).unwrap();
 
         assert!(sd.is_valid());
