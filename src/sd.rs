@@ -15,9 +15,9 @@ use windows_sys::Win32::Security::Authorization::{
 };
 use windows_sys::Win32::Security::{
     ACL, DACL_SECURITY_INFORMATION, GROUP_SECURITY_INFORMATION, GetSecurityDescriptorDacl,
-    GetSecurityDescriptorGroup, GetSecurityDescriptorOwner, IsValidSecurityDescriptor,
-    OBJECT_SECURITY_INFORMATION, OWNER_SECURITY_INFORMATION, PSECURITY_DESCRIPTOR, PSID,
-    SACL_SECURITY_INFORMATION,
+    GetSecurityDescriptorGroup, GetSecurityDescriptorOwner, GetSecurityDescriptorSacl,
+    IsValidSecurityDescriptor, OBJECT_SECURITY_INFORMATION, OWNER_SECURITY_INFORMATION,
+    PSECURITY_DESCRIPTOR, PSID, SACL_SECURITY_INFORMATION,
 };
 use windows_sys::core::{BOOL, PCWSTR};
 
@@ -84,6 +84,7 @@ impl SecurityDescriptor {
         )
     }
 
+    /// Validates a security descriptor.
     pub fn is_valid(&self) -> bool {
         Self::is_sd_valid(self.sd_ptr)
     }
@@ -92,6 +93,9 @@ impl SecurityDescriptor {
         unsafe { IsValidSecurityDescriptor(psd) == TRUE }
     }
 
+    /// Converts a string-format security descriptor into a valid, functional security descriptor.
+    ///
+    /// see [MSDN](https://learn.microsoft.com/en-us/windows/win32/secauthz/security-descriptor-string-format)
     pub fn from_sd_string<S>(sd_string: &S) -> Result<Self, WinError>
     where
         S: AsRef<OsStr> + ?Sized,
@@ -100,6 +104,7 @@ impl SecurityDescriptor {
 
         let mut sd_ptr: PSECURITY_DESCRIPTOR = null_mut();
         let mut dacl_ptr: *mut ACL = null_mut();
+        let mut sacl_ptr: *mut ACL = null_mut();
         let mut owner_sid_ptr: PSID = null_mut();
         let mut group_sid_ptr: PSID = null_mut();
 
@@ -123,6 +128,8 @@ impl SecurityDescriptor {
         let mut _group_defaulted: BOOL = 0;
         let mut _dacl_present: BOOL = 0;
         let mut _dacl_defaulted: BOOL = 0;
+        let mut _sacl_present: BOOL = 0;
+        let mut _sacl_defaulted: BOOL = 0;
 
         let err = unsafe {
             GetSecurityDescriptorOwner(sd_ptr, &mut owner_sid_ptr, &mut _owner_defaulted)
@@ -150,16 +157,30 @@ impl SecurityDescriptor {
             return Err(unsafe { GetLastError().into() });
         }
 
+        let err = unsafe {
+            GetSecurityDescriptorSacl(
+                sd_ptr,
+                &mut _sacl_present,
+                &mut sacl_ptr,
+                &mut _sacl_defaulted,
+            )
+        };
+        if err == 0 {
+            return Err(unsafe { GetLastError().into() });
+        }
+
         Ok(Self {
             sd_ptr,
             dacl_ptr,
-            // need to use elevated variant
-            sacl_ptr: null_mut(),
+            sacl_ptr,
             owner_sid_ptr,
             group_sid_ptr,
         })
     }
 
+    /// Converts security descriptor into a string format
+    ///
+    /// see [MSDN](https://learn.microsoft.com/en-us/windows/win32/secauthz/security-descriptor-string-format)
     pub fn as_sd_string(&self) -> Result<OsString, WinError> {
         let mut buf_ptr: *mut u16 = null_mut();
         let mut buf_len: u32 = 0;
