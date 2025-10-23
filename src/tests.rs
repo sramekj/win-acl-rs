@@ -3,10 +3,17 @@
 mod tests {
     use crate::SE_PRINTER;
     use crate::elevated::is_admin;
+    use crate::error::Result;
     use crate::sd::SecurityDescriptor;
     use crate::utils::WideCString;
     use std::str::FromStr;
     use tempfile::NamedTempFile;
+
+    fn create_test_descriptor() -> Result<SecurityDescriptor> {
+        let path = NamedTempFile::new().unwrap().into_temp_path();
+        assert!(path.exists());
+        SecurityDescriptor::from_path(path)
+    }
 
     #[test]
     fn test_is_admin() {
@@ -28,10 +35,7 @@ mod tests {
 
     #[test]
     fn test_sd_from_path() {
-        let path = NamedTempFile::new().unwrap().into_temp_path();
-        assert!(path.exists());
-
-        let sd = SecurityDescriptor::from_path(path).unwrap();
+        let sd = create_test_descriptor().unwrap();
 
         assert!(sd.is_valid());
     }
@@ -46,10 +50,7 @@ mod tests {
 
     #[test]
     fn test_sd_group_defaulted() {
-        let path = NamedTempFile::new().unwrap().into_temp_path();
-        assert!(path.exists());
-
-        let sd = SecurityDescriptor::from_path(path).unwrap();
+        let sd = create_test_descriptor().unwrap();
 
         assert!(sd.is_valid());
 
@@ -59,14 +60,51 @@ mod tests {
 
     #[test]
     fn test_sd_owner_defaulted() {
-        let path = NamedTempFile::new().unwrap().into_temp_path();
-        assert!(path.exists());
-
-        let sd = SecurityDescriptor::from_path(path).unwrap();
+        let sd = create_test_descriptor().unwrap();
 
         assert!(sd.is_valid());
 
         let owner_defaulted = sd.group_defaulted().unwrap();
         assert!(!owner_defaulted);
+    }
+
+    #[test]
+    fn test_sd_dacl_defaulted() {
+        let sd = create_test_descriptor().unwrap();
+
+        assert!(sd.is_valid());
+
+        let dacl_defaulted = sd.dacl_defaulted().unwrap();
+        assert!(!dacl_defaulted);
+    }
+
+    #[test]
+    fn test_sd_dacl_present() {
+        let sd = create_test_descriptor().unwrap();
+
+        assert!(sd.is_valid());
+
+        let dacl_present = sd.dacl_present().unwrap();
+        assert!(dacl_present);
+    }
+
+    #[test]
+    fn test_sd_sacl_defaulted() {
+        let sd = create_test_descriptor().unwrap();
+
+        assert!(sd.is_valid());
+
+        let sacl_defaulted = sd.sacl_defaulted().unwrap();
+        assert!(!sacl_defaulted);
+    }
+
+    #[test]
+    fn test_sd_sacl_present() {
+        let sd = create_test_descriptor().unwrap();
+
+        assert!(sd.is_valid());
+
+        let sacl_present = sd.sacl_present().unwrap();
+        assert!(!sacl_present);
     }
 }

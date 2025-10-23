@@ -144,6 +144,70 @@ impl SecurityDescriptor {
         Ok(group_defaulted == TRUE)
     }
 
+    /// Indicates a security descriptor with a default DACL.
+    pub fn dacl_defaulted(&self) -> Result<bool, WinError> {
+        let mut _dacl_ptr: *mut ACL = null_mut();
+        let mut _dacl_present: BOOL = 0;
+        let mut dacl_defaulted: BOOL = 0;
+        unsafe {
+            winapi_bool_call!(GetSecurityDescriptorDacl(
+                self.sd_ptr,
+                &mut _dacl_present,
+                &mut _dacl_ptr,
+                &mut dacl_defaulted,
+            ))
+        };
+        Ok(dacl_defaulted == TRUE)
+    }
+
+    /// Indicates a security descriptor that has a DACL. If this flag is not set, or if this flag is set and the DACL is NULL, the security descriptor allows full access to everyone.
+    pub fn dacl_present(&self) -> Result<bool, WinError> {
+        let mut _dacl_ptr: *mut ACL = null_mut();
+        let mut dacl_present: BOOL = 0;
+        let mut _dacl_defaulted: BOOL = 0;
+        unsafe {
+            winapi_bool_call!(GetSecurityDescriptorDacl(
+                self.sd_ptr,
+                &mut dacl_present,
+                &mut _dacl_ptr,
+                &mut _dacl_defaulted,
+            ))
+        };
+        Ok(dacl_present == TRUE)
+    }
+
+    /// Indicates a security descriptor with a default SACL.
+    pub fn sacl_defaulted(&self) -> Result<bool, WinError> {
+        let mut _sacl_ptr: *mut ACL = null_mut();
+        let mut _sacl_present: BOOL = 0;
+        let mut sacl_defaulted: BOOL = 0;
+        unsafe {
+            winapi_bool_call!(GetSecurityDescriptorSacl(
+                self.sd_ptr,
+                &mut _sacl_present,
+                &mut _sacl_ptr,
+                &mut sacl_defaulted,
+            ))
+        };
+        Ok(sacl_defaulted == TRUE)
+    }
+
+    /// Indicates a security descriptor that has a SACL.
+    pub fn sacl_present(&self) -> Result<bool, WinError> {
+        let mut _sacl_ptr: *mut ACL = null_mut();
+        let mut sacl_present: BOOL = 0;
+        let mut _sacl_defaulted: BOOL = 0;
+        unsafe {
+            winapi_bool_call!(GetSecurityDescriptorSacl(
+                self.sd_ptr,
+                &mut sacl_present,
+                &mut _sacl_ptr,
+                &mut _sacl_defaulted,
+            ))
+        };
+        Ok(sacl_present == TRUE)
+    }
+
     /// Converts a string-format security descriptor into a valid, functional security descriptor.
     ///
     /// see [MSDN](https://learn.microsoft.com/en-us/windows/win32/secauthz/security-descriptor-string-format)
