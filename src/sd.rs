@@ -4,12 +4,13 @@ use crate::acl::Acl;
 use crate::error::WinError;
 use crate::sid::Sid;
 use crate::utils::WideCString;
+use crate::{winapi_bool_call, winapi_call};
 use std::ffi::{OsStr, OsString};
 use std::path::Path;
 use std::ptr::null_mut;
 use std::slice::from_raw_parts;
 use std::str::FromStr;
-use windows_sys::Win32::Foundation::{ERROR_SUCCESS, GetLastError, LocalFree, TRUE};
+use windows_sys::Win32::Foundation::{LocalFree, TRUE};
 use windows_sys::Win32::Security::Authorization::{
     ConvertSecurityDescriptorToStringSecurityDescriptorW,
     ConvertStringSecurityDescriptorToSecurityDescriptorW, GetNamedSecurityInfoW, SDDL_REVISION_1,
@@ -115,6 +116,34 @@ impl SecurityDescriptor {
         unsafe { IsValidSecurityDescriptor(psd) == TRUE }
     }
 
+    /// Indicates that the SID of the owner of the security descriptor was provided by a default mechanism.
+    pub fn owner_defaulted(&self) -> Result<bool, WinError> {
+        let mut _owner_sid_ptr: PSID = null_mut();
+        let mut owner_defaulted: BOOL = 0;
+        unsafe {
+            winapi_bool_call!(GetSecurityDescriptorOwner(
+                self.sd_ptr,
+                &mut _owner_sid_ptr,
+                &mut owner_defaulted
+            ))
+        };
+        Ok(owner_defaulted == TRUE)
+    }
+
+    /// Indicates that the security identifier (SID) of the security descriptor group was provided by a default mechanism.
+    pub fn group_defaulted(&self) -> Result<bool, WinError> {
+        let mut _group_sid_ptr: PSID = null_mut();
+        let mut group_defaulted: BOOL = 0;
+        unsafe {
+            winapi_bool_call!(GetSecurityDescriptorGroup(
+                self.sd_ptr,
+                &mut _group_sid_ptr,
+                &mut group_defaulted
+            ))
+        };
+        Ok(group_defaulted == TRUE)
+    }
+
     /// Converts a string-format security descriptor into a valid, functional security descriptor.
     ///
     /// see [MSDN](https://learn.microsoft.com/en-us/windows/win32/secauthz/security-descriptor-string-format)
@@ -130,18 +159,14 @@ impl SecurityDescriptor {
         let mut owner_sid_ptr: PSID = null_mut();
         let mut group_sid_ptr: PSID = null_mut();
 
-        let err = unsafe {
-            ConvertStringSecurityDescriptorToSecurityDescriptorW(
+        unsafe {
+            winapi_bool_call!(ConvertStringSecurityDescriptorToSecurityDescriptorW(
                 wide_str.as_ptr(),
                 SDDL_REVISION_1,
                 &mut sd_ptr,
                 null_mut(),
-            )
+            ))
         };
-
-        if err == 0 {
-            return Err(unsafe { GetLastError().into() });
-        }
 
         #[cfg(debug_assertions)]
         println!("IsValidSecurityDescriptor: {}", Self::is_sd_valid(sd_ptr));
@@ -153,43 +178,33 @@ impl SecurityDescriptor {
         let mut _sacl_present: BOOL = 0;
         let mut _sacl_defaulted: BOOL = 0;
 
-        let err = unsafe {
-            GetSecurityDescriptorOwner(sd_ptr, &mut owner_sid_ptr, &mut _owner_defaulted)
-        };
-        if err == 0 {
-            return Err(unsafe { GetLastError().into() });
-        }
+        unsafe {
+            winapi_bool_call!(GetSecurityDescriptorOwner(
+                sd_ptr,
+                &mut owner_sid_ptr,
+                &mut _owner_defaulted
+            ));
 
-        let err = unsafe {
-            GetSecurityDescriptorGroup(sd_ptr, &mut group_sid_ptr, &mut _group_defaulted)
-        };
-        if err == 0 {
-            return Err(unsafe { GetLastError().into() });
-        }
+            winapi_bool_call!(GetSecurityDescriptorGroup(
+                sd_ptr,
+                &mut group_sid_ptr,
+                &mut _group_defaulted
+            ));
 
-        let err = unsafe {
-            GetSecurityDescriptorDacl(
+            winapi_bool_call!(GetSecurityDescriptorDacl(
                 sd_ptr,
                 &mut _dacl_present,
                 &mut dacl_ptr,
                 &mut _dacl_defaulted,
-            )
-        };
-        if err == 0 {
-            return Err(unsafe { GetLastError().into() });
-        }
+            ));
 
-        let err = unsafe {
-            GetSecurityDescriptorSacl(
+            winapi_bool_call!(GetSecurityDescriptorSacl(
                 sd_ptr,
                 &mut _sacl_present,
                 &mut sacl_ptr,
                 &mut _sacl_defaulted,
-            )
+            ))
         };
-        if err == 0 {
-            return Err(unsafe { GetLastError().into() });
-        }
 
         Ok(Self {
             sd_ptr,
@@ -207,18 +222,15 @@ impl SecurityDescriptor {
         let mut buf_ptr: *mut u16 = null_mut();
         let mut buf_len: u32 = 0;
 
-        let err = unsafe {
-            ConvertSecurityDescriptorToStringSecurityDescriptorW(
+        unsafe {
+            winapi_bool_call!(ConvertSecurityDescriptorToStringSecurityDescriptorW(
                 self.sd_ptr,
                 SDDL_REVISION_1,
                 OBJECT_SECURITY_INFORMATION::get_all(),
                 &mut buf_ptr,
                 &mut buf_len,
-            )
+            ))
         };
-        if err == 0 {
-            return Err(unsafe { GetLastError().into() });
-        }
 
         let slice = unsafe { from_raw_parts(buf_ptr, buf_len as usize) };
         let string = WideCString::from_wide_slice(slice);
@@ -253,8 +265,9 @@ impl SecurityDescriptor {
         let mut sacl_ptr: *mut ACL = null_mut();
         let mut owner_sid_ptr: PSID = null_mut();
         let mut group_sid_ptr: PSID = null_mut();
-        let err = unsafe {
-            GetNamedSecurityInfoW(
+
+        unsafe {
+            winapi_call!(GetNamedSecurityInfoW(
                 obj_name,
                 obj_type,
                 flags,
@@ -263,12 +276,8 @@ impl SecurityDescriptor {
                 &mut dacl_ptr,
                 &mut sacl_ptr,
                 &mut sd_ptr,
-            )
+            ))
         };
-
-        if err != ERROR_SUCCESS {
-            return Err(err.into());
-        }
 
         Ok(Self {
             sd_ptr,

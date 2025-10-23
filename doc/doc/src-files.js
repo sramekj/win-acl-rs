@@ -1,2 +1,2 @@
-createSrcSidebar('[["win_acl_rs",["",[],["acl.rs","elevated.rs","lib.rs","sd.rs","sid.rs","utils.rs"]]]]');
-//{"start":19,"fragment_lengths":[84]}
+createSrcSidebar('[["win_acl_rs",["",[],["acl.rs","elevated.rs","lib.rs","macros.rs","sd.rs","sid.rs","utils.rs"]]],["win_acl_rs",["",[],["acl.rs","elevated.rs","lib.rs","sd.rs","sid.rs","utils.rs"]]]]');
+//{"start":19,"fragment_lengths":[96,85]}

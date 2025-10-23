@@ -10,6 +10,8 @@ pub mod sd;
 pub mod sid;
 pub mod utils;
 
+mod macros;
+
 pub use windows_sys::Win32::Security::Authorization::{
     SE_DS_OBJECT, SE_DS_OBJECT_ALL, SE_FILE_OBJECT, SE_KERNEL_OBJECT, SE_LMSHARE, SE_OBJECT_TYPE,
     SE_PRINTER, SE_PROVIDER_DEFINED_OBJECT, SE_REGISTRY_KEY, SE_REGISTRY_WOW64_32KEY,

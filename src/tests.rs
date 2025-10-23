@@ -43,4 +43,30 @@ mod tests {
 
         assert!(sd.is_valid());
     }
+
+    #[test]
+    fn test_sd_group_defaulted() {
+        let path = NamedTempFile::new().unwrap().into_temp_path();
+        assert!(path.exists());
+
+        let sd = SecurityDescriptor::from_path(path).unwrap();
+
+        assert!(sd.is_valid());
+
+        let group_defaulted = sd.group_defaulted().unwrap();
+        assert!(!group_defaulted);
+    }
+
+    #[test]
+    fn test_sd_owner_defaulted() {
+        let path = NamedTempFile::new().unwrap().into_temp_path();
+        assert!(path.exists());
+
+        let sd = SecurityDescriptor::from_path(path).unwrap();
+
+        assert!(sd.is_valid());
+
+        let owner_defaulted = sd.group_defaulted().unwrap();
+        assert!(!owner_defaulted);
+    }
 }

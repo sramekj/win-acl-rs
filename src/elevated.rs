@@ -3,6 +3,7 @@
 //! you can run `whoami /priv` to check it. You typically need to run the process as an Administrator and enable it using enable_se_security_privilege().
 
 use crate::error::WinError;
+use crate::winapi_bool_call;
 use std::ptr;
 use std::ptr::null_mut;
 use windows_sys::Win32::Foundation::{CloseHandle, ERROR_SUCCESS, GetLastError, HANDLE, LUID};
@@ -18,23 +19,23 @@ use windows_sys::Win32::System::Threading::{GetCurrentProcess, OpenProcessToken}
 pub fn enable_se_security_privilege() -> Result<(), WinError> {
     unsafe {
         let mut token: HANDLE = null_mut();
-        if OpenProcessToken(
+
+        winapi_bool_call!(OpenProcessToken(
             GetCurrentProcess(),
             TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY,
             &mut token,
-        ) == 0
-        {
-            return Err(GetLastError().into());
-        }
+        ));
 
         let mut luid = LUID {
             LowPart: 0,
             HighPart: 0,
         };
-        if LookupPrivilegeValueW(ptr::null(), SE_SECURITY_NAME, &mut luid) == 0 {
-            CloseHandle(token);
-            return Err(GetLastError().into());
-        }
+        winapi_bool_call!(
+            LookupPrivilegeValueW(ptr::null(), SE_SECURITY_NAME, &mut luid),
+            {
+                CloseHandle(token);
+            }
+        );
 
         let tp = TOKEN_PRIVILEGES {
             PrivilegeCount: 1,
@@ -43,11 +44,12 @@ pub fn enable_se_security_privilege() -> Result<(), WinError> {
                 Attributes: SE_PRIVILEGE_ENABLED,
             }],
         };
-
-        if AdjustTokenPrivileges(token, 0, &tp as *const _ as _, 0, null_mut(), null_mut()) == 0 {
-            CloseHandle(token);
-            return Err(GetLastError().into());
-        }
+        winapi_bool_call!(
+            AdjustTokenPrivileges(token, 0, &tp as *const _ as _, 0, null_mut(), null_mut()),
+            {
+                CloseHandle(token);
+            }
+        );
 
         let err = GetLastError();
         CloseHandle(token);
@@ -65,22 +67,26 @@ pub fn is_admin() -> Result<bool, WinError> {
         let mut token_handle = null_mut();
         let mut token_elevation = TOKEN_ELEVATION { TokenIsElevated: 0 };
 
-        if OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &mut token_handle) == 0 {
-            return Err(GetLastError().into());
-        }
+        winapi_bool_call!(OpenProcessToken(
+            GetCurrentProcess(),
+            TOKEN_QUERY,
+            &mut token_handle
+        ));
 
         let mut size = 0;
-        if GetTokenInformation(
-            token_handle,
-            TokenElevation,
-            &mut token_elevation as *mut _ as *mut std::ffi::c_void,
-            size_of::<TOKEN_ELEVATION>() as u32,
-            &mut size,
-        ) == 0
-        {
-            CloseHandle(token_handle);
-            return Err(GetLastError().into());
-        }
+
+        winapi_bool_call!(
+            GetTokenInformation(
+                token_handle,
+                TokenElevation,
+                &mut token_elevation as *mut _ as *mut std::ffi::c_void,
+                size_of::<TOKEN_ELEVATION>() as u32,
+                &mut size,
+            ),
+            {
+                CloseHandle(token_handle);
+            }
+        );
 
         CloseHandle(token_handle);
         Ok(token_elevation.TokenIsElevated != 0)
