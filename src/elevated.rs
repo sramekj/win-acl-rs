@@ -89,15 +89,12 @@ pub fn is_admin() -> Result<bool, WinError> {
 
 pub mod sd {
     use crate::error::WinError;
-    use crate::sd::SecurityDescriptor;
+    use crate::sd::{ObjectSecurityEx, SecurityDescriptor};
     use crate::utils::WideCString;
     use std::ffi::OsStr;
     use std::path::Path;
     use windows_sys::Win32::Security::Authorization::SE_FILE_OBJECT;
-    use windows_sys::Win32::Security::{
-        DACL_SECURITY_INFORMATION, GROUP_SECURITY_INFORMATION, OWNER_SECURITY_INFORMATION,
-        SACL_SECURITY_INFORMATION,
-    };
+    use windows_sys::Win32::Security::OBJECT_SECURITY_INFORMATION;
 
     /// SecurityDescriptor wrapper with functions that require *SeSecurityPrivilege* privilege.
     pub struct ElevatedSecurityDescriptor;
@@ -121,10 +118,7 @@ pub mod sd {
             SecurityDescriptor::create_sd(
                 wide_path.as_ptr(),
                 SE_FILE_OBJECT,
-                DACL_SECURITY_INFORMATION
-                    | GROUP_SECURITY_INFORMATION
-                    | OWNER_SECURITY_INFORMATION
-                    | SACL_SECURITY_INFORMATION,
+                OBJECT_SECURITY_INFORMATION::get_all(),
             )
         }
     }
