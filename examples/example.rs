@@ -26,6 +26,7 @@ pub fn main() -> win_acl_rs::error::Result<()> {
         let printer_name = OsStr::new("Microsoft XPS Document Writer");
         let sd = SecurityDescriptor::from_handle(printer_name, SE_PRINTER)?;
         println!("SD: {:?}", sd);
+        println!("Is valid: {}", sd.is_valid());
     } else {
         println!("Running as an admin");
 
@@ -34,6 +35,7 @@ pub fn main() -> win_acl_rs::error::Result<()> {
 
         let sd = ElevatedSecurityDescriptor::from_path(&path)?;
         println!("SD: {:?}", sd);
+        println!("Is valid: {}", sd.is_valid());
     }
     Ok(())
 }
