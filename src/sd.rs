@@ -15,6 +15,7 @@ use windows_sys::Win32::Security::{
 };
 use windows_sys::core::PCWSTR;
 
+/// A Windows security descriptor.
 #[must_use]
 pub struct SecurityDescriptor {
     sd_ptr: PSECURITY_DESCRIPTOR,
@@ -48,6 +49,15 @@ impl std::fmt::Debug for SecurityDescriptor {
 }
 
 impl SecurityDescriptor {
+    /// Creates a SecurityDescriptor from path to the "file object"
+    ///
+    /// # Arguments
+    ///
+    /// * `path` - Path to the file.
+    ///
+    /// # Returns
+    ///
+    /// A `SecurityDescriptor` on success.
     pub fn from_path<P>(path: P) -> Result<Self, WinError>
     where
         P: AsRef<Path>,

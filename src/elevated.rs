@@ -1,3 +1,7 @@
+//! this module exposes functions that require elevated privileges
+//! the process requires "SE_SECURITY_NAME" (*SeSecurityPrivilege*) privilege, would otherwise return WIN32_ERROR(1314) => "A required privilege is not held by the client"
+//! you can run `whoami /priv` to check it. You typically need to run the process as an Administrator and enable it using enable_se_security_privilege().
+
 use crate::error::WinError;
 use std::ptr;
 use std::ptr::null_mut;
@@ -9,6 +13,8 @@ use windows_sys::Win32::Security::{
 };
 use windows_sys::Win32::System::Threading::{GetCurrentProcess, OpenProcessToken};
 
+/// Enables *SeSecurityPrivilege* privilege.
+/// This typically needs a process running as an Administrator.
 pub fn enable_se_security_privilege() -> Result<(), WinError> {
     unsafe {
         let mut token: HANDLE = null_mut();
@@ -53,6 +59,7 @@ pub fn enable_se_security_privilege() -> Result<(), WinError> {
     Ok(())
 }
 
+/// Checks if the current process is running as an Administrator.
 pub fn is_admin() -> Result<bool, WinError> {
     unsafe {
         let mut token_handle = null_mut();
@@ -92,11 +99,19 @@ pub mod sd {
         SACL_SECURITY_INFORMATION,
     };
 
+    /// SecurityDescriptor wrapper with functions that require *SeSecurityPrivilege* privilege.
     pub struct ElevatedSecurityDescriptor;
 
     impl ElevatedSecurityDescriptor {
-        // the process requires "SE_SECURITY_NAME" (SeSecurityPrivilege) privilege, would otherwise return WIN32_ERROR(1314) => "A required privilege is not held by the client"
-        // you can run "whoami /priv" to check it. You typically need to run the process as an Administrator and enable it using enable_se_security_privilege().
+        /// Creates a SecurityDescriptor from path to the "file object"
+        ///
+        /// # Arguments
+        ///
+        /// * `path` - Path to the file.
+        ///
+        /// # Returns
+        ///
+        /// A `SecurityDescriptor` on success.
         pub fn from_path<P>(path: P) -> Result<SecurityDescriptor, WinError>
         where
             P: AsRef<Path>,
