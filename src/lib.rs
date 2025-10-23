@@ -8,7 +8,13 @@ pub mod acl;
 pub mod elevated;
 pub mod sd;
 pub mod sid;
-mod utils;
+pub mod utils;
+
+pub use windows_sys::Win32::Security::Authorization::{
+    SE_DS_OBJECT, SE_DS_OBJECT_ALL, SE_FILE_OBJECT, SE_KERNEL_OBJECT, SE_LMSHARE, SE_OBJECT_TYPE,
+    SE_PRINTER, SE_PROVIDER_DEFINED_OBJECT, SE_REGISTRY_KEY, SE_REGISTRY_WOW64_32KEY,
+    SE_REGISTRY_WOW64_64KEY, SE_SERVICE, SE_UNKNOWN_OBJECT_TYPE, SE_WINDOW_OBJECT,
+};
 
 pub mod error {
     use std::fmt::{Debug, Display, Formatter};

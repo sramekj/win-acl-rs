@@ -1,6 +1,8 @@
 #![allow(non_snake_case)]
 
+use crate::acl::Acl;
 use crate::error::WinError;
+use crate::sid::Sid;
 use crate::utils::WideCString;
 use std::ffi::{OsStr, OsString};
 use std::path::Path;
@@ -80,6 +82,26 @@ impl SecurityDescriptor {
         Self::create_sd(
             wide_path.as_ptr(),
             SE_FILE_OBJECT,
+            OBJECT_SECURITY_INFORMATION::get_safe(),
+        )
+    }
+
+    /// Creates a SecurityDescriptor from object name and object type.
+    ///
+    /// # Arguments
+    ///
+    /// * `handle` - name of the object. This could be many things (path to the file or directory, to network share, name of the printer, registry key, ...)
+    /// * `object_type` - a type of the object
+    ///
+    /// see [MSDN](https://learn.microsoft.com/en-us/windows/win32/api/accctrl/ne-accctrl-se_object_type)
+    ///
+    /// # Returns
+    ///
+    /// A `SecurityDescriptor` on success.
+    pub fn from_handle(handle: WideCString, object_type: SE_OBJECT_TYPE) -> Result<Self, WinError> {
+        Self::create_sd(
+            handle.as_ptr(),
+            object_type,
             OBJECT_SECURITY_INFORMATION::get_safe(),
         )
     }
@@ -201,12 +223,24 @@ impl SecurityDescriptor {
         let slice = unsafe { from_raw_parts(buf_ptr, buf_len as usize) };
         let string = WideCString::from_wide_slice(slice);
 
-        if !self.sd_ptr.is_null() {
+        if !buf_ptr.is_null() {
             let freed = unsafe { LocalFree(buf_ptr as _) };
             debug_assert!(freed.is_null(), "LocalFree failed in as_sd_string()!");
         }
 
         Ok(string.as_os_string())
+    }
+
+    pub fn owner_sid(&self) -> Option<&Sid> {
+        todo!()
+    }
+
+    pub fn group_sid(&self) -> Option<&Sid> {
+        todo!()
+    }
+
+    pub fn dacl(&self) -> Option<&Acl> {
+        todo!()
     }
 
     pub(crate) fn create_sd(

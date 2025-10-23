@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":["acl","elevated","error","sd","sid"]};
+window.SIDEBAR_ITEMS = {"constant":["SE_DS_OBJECT","SE_DS_OBJECT_ALL","SE_FILE_OBJECT","SE_KERNEL_OBJECT","SE_LMSHARE","SE_PRINTER","SE_PROVIDER_DEFINED_OBJECT","SE_REGISTRY_KEY","SE_REGISTRY_WOW64_32KEY","SE_REGISTRY_WOW64_64KEY","SE_SERVICE","SE_UNKNOWN_OBJECT_TYPE","SE_WINDOW_OBJECT"],"mod":["acl","elevated","error","sd","sid","utils"],"type":["SE_OBJECT_TYPE"]};

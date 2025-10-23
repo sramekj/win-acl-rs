@@ -1,8 +1,10 @@
 #![cfg(windows)]
 
 mod tests {
+    use crate::SE_PRINTER;
     use crate::elevated::is_admin;
     use crate::sd::SecurityDescriptor;
+    use crate::utils::WideCString;
     use std::str::FromStr;
     use tempfile::NamedTempFile;
 
@@ -30,6 +32,14 @@ mod tests {
         assert!(path.exists());
 
         let sd = SecurityDescriptor::from_path(path).unwrap();
+
+        assert!(sd.is_valid());
+    }
+
+    #[test]
+    fn test_sd_from_handle() {
+        let handle = WideCString::new("Microsoft XPS Document Writer");
+        let sd = SecurityDescriptor::from_handle(handle, SE_PRINTER).unwrap();
 
         assert!(sd.is_valid());
     }
