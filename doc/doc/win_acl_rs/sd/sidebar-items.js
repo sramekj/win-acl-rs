@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["SecurityDescriptor"]};
+window.SIDEBAR_ITEMS = {"struct":["SecurityDescriptorImpl"],"type":["SecurityDescriptor"]};

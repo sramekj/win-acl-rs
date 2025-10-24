@@ -2,7 +2,7 @@
 //!
 //! See *examples* folder
 
-#![warn(missing_docs, missing_debug_implementations)]
+//#![warn(missing_docs, missing_debug_implementations)]
 #![cfg(windows)]
 
 pub mod acl;

@@ -3,20 +3,28 @@
 //! you can run `whoami /priv` to check it. You typically need to run the process as an Administrator and enable it using enable_se_security_privilege().
 
 use crate::error::WinError;
+use crate::sd::{ObjectSecurityEx, SecurityDescriptorImpl};
+use crate::utils::WideCString;
 use crate::winapi_bool_call;
+use std::ffi::OsStr;
+use std::marker::PhantomData;
+use std::path::Path;
 use std::ptr;
 use std::ptr::null_mut;
 use windows_sys::Win32::Foundation::{CloseHandle, ERROR_SUCCESS, GetLastError, HANDLE, LUID};
+use windows_sys::Win32::Security::Authorization::{SE_FILE_OBJECT, SE_OBJECT_TYPE};
 use windows_sys::Win32::Security::{
-    AdjustTokenPrivileges, GetTokenInformation, LookupPrivilegeValueW, SE_PRIVILEGE_ENABLED,
-    SE_SECURITY_NAME, TOKEN_ADJUST_PRIVILEGES, TOKEN_ELEVATION, TOKEN_PRIVILEGES, TOKEN_QUERY,
-    TokenElevation,
+    AdjustTokenPrivileges, GetTokenInformation, LookupPrivilegeValueW, OBJECT_SECURITY_INFORMATION,
+    SE_PRIVILEGE_ENABLED, SE_SECURITY_NAME, TOKEN_ADJUST_PRIVILEGES, TOKEN_ELEVATION,
+    TOKEN_PRIVILEGES, TOKEN_QUERY, TokenElevation,
 };
 use windows_sys::Win32::System::Threading::{GetCurrentProcess, OpenProcessToken};
 
+pub type SecurityDescriptorElevated = SecurityDescriptorImpl<Elevated>;
+
 /// Enables *SeSecurityPrivilege* privilege.
 /// This typically needs a process running as an Administrator.
-pub fn enable_se_security_privilege() -> Result<(), WinError> {
+fn enable_se_security_privilege() -> Result<(), WinError> {
     unsafe {
         let mut token: HANDLE = null_mut();
 
@@ -93,41 +101,95 @@ pub fn is_admin() -> Result<bool, WinError> {
     }
 }
 
-/// todo
-pub mod sd {
-    use crate::error::WinError;
-    use crate::sd::{ObjectSecurityEx, SecurityDescriptor};
-    use crate::utils::WideCString;
-    use std::ffi::OsStr;
-    use std::path::Path;
-    use windows_sys::Win32::Security::Authorization::SE_FILE_OBJECT;
-    use windows_sys::Win32::Security::OBJECT_SECURITY_INFORMATION;
+pub trait PrivilegeLevel {}
+#[derive(Debug)]
+pub struct Unprivileged;
+#[derive(Debug)]
+pub struct Elevated;
+impl PrivilegeLevel for Unprivileged {}
+impl PrivilegeLevel for Elevated {}
 
-    /// SecurityDescriptor wrapper with functions that require *SeSecurityPrivilege* privilege.
-    #[derive(Debug)]
-    pub struct ElevatedSecurityDescriptor;
+/// Represents the current privilege context.
+pub type PrivilegeToken = PrivilegeTokenImpl<Unprivileged>;
 
-    impl ElevatedSecurityDescriptor {
-        /// Creates a SecurityDescriptor from path to the "file object"
-        ///
-        /// # Arguments
-        ///
-        /// * `path` - Path to the file.
-        ///
-        /// # Returns
-        ///
-        /// A `SecurityDescriptor` on success.
-        pub fn from_path<P>(path: P) -> Result<SecurityDescriptor, WinError>
-        where
-            P: AsRef<Path>,
-        {
-            let wide_path = WideCString::new(OsStr::new(path.as_ref()));
+#[derive(Debug)]
+pub struct PrivilegeTokenImpl<P: PrivilegeLevel> {
+    _marker: PhantomData<P>,
+}
 
-            SecurityDescriptor::create_sd(
-                wide_path.as_ptr(),
-                SE_FILE_OBJECT,
-                OBJECT_SECURITY_INFORMATION::get_all(),
-            )
+impl PrivilegeTokenImpl<Unprivileged> {
+    pub fn new() -> Self {
+        Self {
+            _marker: PhantomData,
         }
+    }
+
+    /// Try to elevate the current process.
+    pub fn try_elevate(self) -> Result<PrivilegeTokenImpl<Elevated>, WinError> {
+        enable_se_security_privilege()?;
+        Ok(PrivilegeTokenImpl {
+            _marker: PhantomData,
+        })
+    }
+}
+
+impl Default for PrivilegeTokenImpl<Unprivileged> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl PrivilegeTokenImpl<Elevated> {
+    /// Drop back to unprivileged state.
+    pub fn drop_privileges(self) -> PrivilegeTokenImpl<Unprivileged> {
+        PrivilegeTokenImpl::new()
+    }
+}
+
+impl SecurityDescriptorImpl<Elevated> {
+    /// Creates a SecurityDescriptor from path to the "file object"
+    ///
+    /// # Arguments
+    ///
+    /// * `path` - Path to the file.
+    ///
+    /// # Returns
+    ///
+    /// A `SecurityDescriptor` on success.
+    pub fn from_path<P>(path: P) -> Result<Self, WinError>
+    where
+        P: AsRef<Path>,
+    {
+        let wide_path = WideCString::new(OsStr::new(path.as_ref()));
+
+        Self::create_sd(
+            wide_path.as_ptr(),
+            SE_FILE_OBJECT,
+            OBJECT_SECURITY_INFORMATION::get_all(),
+        )
+    }
+
+    /// Creates a SecurityDescriptor from object name and object type.
+    ///
+    /// # Arguments
+    ///
+    /// * `handle` - name of the object. This could be many things (path to the file or directory, to network share, name of the printer, registry key, ...)
+    /// * `object_type` - a type of the object
+    ///
+    /// see [MSDN](https://learn.microsoft.com/en-us/windows/win32/api/accctrl/ne-accctrl-se_object_type)
+    ///
+    /// # Returns
+    ///
+    /// A `SecurityDescriptor` on success.
+    pub fn from_handle<S>(handle: S, object_type: SE_OBJECT_TYPE) -> Result<Self, WinError>
+    where
+        S: AsRef<str>,
+    {
+        let wide_string = WideCString::new(handle.as_ref());
+        Self::create_sd(
+            wide_string.as_ptr(),
+            object_type,
+            OBJECT_SECURITY_INFORMATION::get_all(),
+        )
     }
 }

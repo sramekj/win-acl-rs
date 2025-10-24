@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["enable_se_security_privilege","is_admin"],"mod":["sd"]};
+window.SIDEBAR_ITEMS = {"fn":["is_admin"],"struct":["Elevated","PrivilegeTokenImpl","Unprivileged"],"trait":["PrivilegeLevel"],"type":["PrivilegeToken","SecurityDescriptorElevated"]};

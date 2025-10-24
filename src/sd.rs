@@ -3,11 +3,13 @@
 #![allow(non_snake_case)]
 
 use crate::acl::Acl;
+use crate::elevated::{Elevated, PrivilegeLevel, PrivilegeTokenImpl, Unprivileged};
 use crate::error::WinError;
 use crate::sid::Sid;
 use crate::utils::WideCString;
 use crate::{winapi_bool_call, winapi_call};
 use std::ffi::OsStr;
+use std::marker::PhantomData;
 use std::path::Path;
 use std::ptr::null_mut;
 use std::slice::from_raw_parts;
@@ -26,47 +28,37 @@ use windows_sys::Win32::Security::{
 };
 use windows_sys::core::{BOOL, PCWSTR};
 
+pub type SecurityDescriptor = SecurityDescriptorImpl<Unprivileged>;
+
 /// A Windows security descriptor.
 #[must_use]
-pub struct SecurityDescriptor {
+pub struct SecurityDescriptorImpl<P: PrivilegeLevel = Unprivileged> {
     sd_ptr: PSECURITY_DESCRIPTOR,
     owner_sid_ptr: PSID,
     group_sid_ptr: PSID,
     dacl_ptr: *mut ACL,
     sacl_ptr: *mut ACL,
+    _priv: PhantomData<P>,
 }
 
-impl Drop for SecurityDescriptor {
-    fn drop(&mut self) {
-        unsafe {
-            if !self.sd_ptr.is_null() {
-                let freed = LocalFree(self.sd_ptr as _);
-                debug_assert!(freed.is_null(), "LocalFree failed in Drop!");
-            }
+impl SecurityDescriptorImpl<Unprivileged> {
+    /// Upgrades security descriptor to elevated one that has access to SACL, for example
+    ///
+    /// Is guarded by the existence of elevated token
+    pub fn upgrade(
+        self,
+        _token: &PrivilegeTokenImpl<Elevated>,
+    ) -> SecurityDescriptorImpl<Elevated> {
+        SecurityDescriptorImpl {
+            sd_ptr: self.sd_ptr,
+            owner_sid_ptr: self.owner_sid_ptr,
+            group_sid_ptr: self.group_sid_ptr,
+            dacl_ptr: self.dacl_ptr,
+            sacl_ptr: self.sacl_ptr,
+            _priv: PhantomData,
         }
     }
-}
-impl FromStr for SecurityDescriptor {
-    type Err = WinError;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Self::from_sd_string(s)
-    }
-}
-
-impl std::fmt::Debug for SecurityDescriptor {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("SecurityDescriptor")
-            .field("sd_ptr", &self.sd_ptr)
-            .field("owner_sid_ptr", &self.owner_sid_ptr)
-            .field("group_sid_ptr", &self.group_sid_ptr)
-            .field("dacl_ptr", &self.dacl_ptr)
-            .field("sacl_ptr", &self.sacl_ptr)
-            .finish()
-    }
-}
-
-impl SecurityDescriptor {
     /// Creates a SecurityDescriptor from path to the "file object"
     ///
     /// # Arguments
@@ -112,7 +104,39 @@ impl SecurityDescriptor {
             OBJECT_SECURITY_INFORMATION::get_safe(),
         )
     }
+}
 
+impl<P: PrivilegeLevel> Drop for SecurityDescriptorImpl<P> {
+    fn drop(&mut self) {
+        unsafe {
+            if !self.sd_ptr.is_null() {
+                let freed = LocalFree(self.sd_ptr as _);
+                debug_assert!(freed.is_null(), "LocalFree failed in Drop!");
+            }
+        }
+    }
+}
+impl<P: PrivilegeLevel> FromStr for SecurityDescriptorImpl<P> {
+    type Err = WinError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Self::from_sd_string(s)
+    }
+}
+
+impl<P: PrivilegeLevel> std::fmt::Debug for SecurityDescriptorImpl<P> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SecurityDescriptor")
+            .field("sd_ptr", &self.sd_ptr)
+            .field("owner_sid_ptr", &self.owner_sid_ptr)
+            .field("group_sid_ptr", &self.group_sid_ptr)
+            .field("dacl_ptr", &self.dacl_ptr)
+            .field("sacl_ptr", &self.sacl_ptr)
+            .finish()
+    }
+}
+
+impl<P: PrivilegeLevel> SecurityDescriptorImpl<P> {
     /// Validates a security descriptor.
     pub fn is_valid(&self) -> bool {
         Self::is_sd_valid(self.sd_ptr)
@@ -286,6 +310,7 @@ impl SecurityDescriptor {
             sacl_ptr,
             owner_sid_ptr,
             group_sid_ptr,
+            _priv: PhantomData,
         })
     }
 
@@ -366,6 +391,7 @@ impl SecurityDescriptor {
             sacl_ptr,
             owner_sid_ptr,
             group_sid_ptr,
+            _priv: PhantomData,
         })
     }
 }

@@ -1,8 +1,7 @@
 use std::str::FromStr;
 use tempfile::NamedTempFile;
 use win_acl_rs::SE_PRINTER;
-use win_acl_rs::elevated::sd::ElevatedSecurityDescriptor;
-use win_acl_rs::elevated::{enable_se_security_privilege, is_admin};
+use win_acl_rs::elevated::{PrivilegeToken, SecurityDescriptorElevated, is_admin};
 use win_acl_rs::sd::SecurityDescriptor;
 
 pub fn main() -> win_acl_rs::error::Result<()> {
@@ -29,10 +28,18 @@ pub fn main() -> win_acl_rs::error::Result<()> {
     } else {
         println!("Running as an admin");
 
-        enable_se_security_privilege()?;
+        // create a privilege token and try to elevate it => this will try to obtain SeSecurityPrivilege
+        let token = PrivilegeToken::new();
+        let elevated_token = token.try_elevate()?;
         println!("SeSecurityPrivilege enabled");
 
-        let sd = ElevatedSecurityDescriptor::from_path(&path)?;
+        // we can either upgrade regular security descriptor with elevated token
+        let sd = SecurityDescriptor::from_path(&path)?;
+        let _upgraded = sd.upgrade(&elevated_token);
+
+        // or create a new one directly (not guarded by token)
+
+        let sd = SecurityDescriptorElevated::from_path(&path)?;
         println!("SD: {:?}", sd);
         println!("Is valid: {}", sd.is_valid());
     }
