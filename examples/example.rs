@@ -33,13 +33,14 @@ pub fn main() -> win_acl_rs::error::Result<()> {
         let elevated_token = token.try_elevate()?;
         println!("SeSecurityPrivilege enabled");
 
-        // we can either upgrade regular security descriptor with elevated token
+        // we can either optionally upgrade regular security descriptor with elevated token
         let sd = SecurityDescriptor::from_path(&path)?;
         let _upgraded = sd.upgrade(&elevated_token);
+        //...
 
-        // or create a new one directly (not guarded by token)
+        // or create a new one directly
 
-        let sd = SecurityDescriptorElevated::from_path(&path)?;
+        let sd = SecurityDescriptorElevated::from_path(&elevated_token, &path)?;
         println!("SD: {:?}", sd);
         println!("Is valid: {}", sd.is_valid());
     }

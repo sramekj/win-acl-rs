@@ -151,12 +151,13 @@ impl SecurityDescriptorImpl<Elevated> {
     ///
     /// # Arguments
     ///
+    /// * `_token` - an elevated privilege token.
     /// * `path` - Path to the file.
     ///
     /// # Returns
     ///
     /// A `SecurityDescriptor` on success.
-    pub fn from_path<P>(path: P) -> Result<Self, WinError>
+    pub fn from_path<P>(_token: &PrivilegeTokenImpl<Elevated>, path: P) -> Result<Self, WinError>
     where
         P: AsRef<Path>,
     {
@@ -173,6 +174,7 @@ impl SecurityDescriptorImpl<Elevated> {
     ///
     /// # Arguments
     ///
+    /// * `_token` - an elevated privilege token.
     /// * `handle` - name of the object. This could be many things (path to the file or directory, to network share, name of the printer, registry key, ...)
     /// * `object_type` - a type of the object
     ///
@@ -181,7 +183,11 @@ impl SecurityDescriptorImpl<Elevated> {
     /// # Returns
     ///
     /// A `SecurityDescriptor` on success.
-    pub fn from_handle<S>(handle: S, object_type: SE_OBJECT_TYPE) -> Result<Self, WinError>
+    pub fn from_handle<S>(
+        _token: &PrivilegeTokenImpl<Elevated>,
+        handle: S,
+        object_type: SE_OBJECT_TYPE,
+    ) -> Result<Self, WinError>
     where
         S: AsRef<str>,
     {
