@@ -1,3 +1,5 @@
+//! TODO
+
 #![allow(non_snake_case)]
 
 use crate::acl::Acl;
@@ -319,14 +321,17 @@ impl SecurityDescriptor {
         Ok(string.as_string())
     }
 
+    /// TODO
     pub fn owner_sid(&self) -> Option<&Sid> {
         todo!()
     }
 
+    /// TODO
     pub fn group_sid(&self) -> Option<&Sid> {
         todo!()
     }
 
+    /// TODO
     pub fn dacl(&self) -> Option<&Acl> {
         todo!()
     }

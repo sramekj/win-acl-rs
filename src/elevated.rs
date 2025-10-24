@@ -93,6 +93,7 @@ pub fn is_admin() -> Result<bool, WinError> {
     }
 }
 
+/// todo
 pub mod sd {
     use crate::error::WinError;
     use crate::sd::{ObjectSecurityEx, SecurityDescriptor};
@@ -103,6 +104,7 @@ pub mod sd {
     use windows_sys::Win32::Security::OBJECT_SECURITY_INFORMATION;
 
     /// SecurityDescriptor wrapper with functions that require *SeSecurityPrivilege* privilege.
+    #[derive(Debug)]
     pub struct ElevatedSecurityDescriptor;
 
     impl ElevatedSecurityDescriptor {

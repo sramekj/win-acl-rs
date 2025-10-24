@@ -1,3 +1,5 @@
-pub struct Sid;
+//! TODO
 
-//TODO
+/// TODO
+#[derive(Debug)]
+pub struct Sid;

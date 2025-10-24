@@ -1,3 +1,14 @@
+/// Windows api call that returns boolean result
+///
+/// expands to:
+/// ```text
+/// let err = unsafe_call();
+/// if result = 0 {
+///     { optional cleanup block }
+///     return Err(unsafe { GetLastError().into() });
+/// }
+/// ```
+///
 #[macro_export]
 macro_rules! winapi_bool_call {
     ($expr:expr, $cleanup:block) => {{
@@ -17,6 +28,17 @@ macro_rules! winapi_bool_call {
     }};
 }
 
+/// Windows api call that returns error code result
+///
+/// expands to:
+/// ```text
+/// let err = unsafe_call();
+/// if result != ERROR_SUCCESS {
+///     { optional cleanup block }
+///     return Err(result.into());
+/// }
+/// ```
+///
 #[macro_export]
 macro_rules! winapi_call {
      ($expr:expr, $cleanup:block) => {{
