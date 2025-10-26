@@ -2,12 +2,15 @@
 
 use crate::error::WinError;
 use crate::utils::WideCString;
+use std::fmt::{Display, Formatter};
+use std::hash::{Hash, Hasher};
 use std::marker::PhantomData;
-use std::ptr::null_mut;
+use std::ptr::{copy_nonoverlapping, null_mut};
+use std::str::FromStr;
 use windows_sys::Win32::Foundation::{FALSE, GetLastError, LocalFree};
 use windows_sys::Win32::Security::Authorization::{ConvertSidToStringSidW, ConvertStringSidToSidW};
 use windows_sys::Win32::Security::{CopySid, GetLengthSid, IsValidSid, PSID, SID};
-use windows_sys::Win32::System::Memory::LocalAlloc;
+use windows_sys::Win32::System::Memory::{LMEM_FIXED, LocalAlloc};
 
 /// Owned SID structure, opaque
 #[derive(Debug)]
@@ -34,6 +37,41 @@ impl Drop for Sid {
     }
 }
 
+impl FromStr for Sid {
+    type Err = WinError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Sid::from_string(s)
+    }
+}
+
+impl Display for Sid {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let str = self.to_string().unwrap_or_else(|_| "<invalid sid>".into());
+        f.write_str(&str)
+    }
+}
+
+impl Clone for Sid {
+    fn clone(&self) -> Self {
+        Sid::from_bytes(&self.to_vec()).unwrap()
+    }
+}
+
+impl PartialEq<Self> for Sid {
+    fn eq(&self, other: &Self) -> bool {
+        self.to_vec() == other.to_vec()
+    }
+}
+
+impl Eq for Sid {}
+
+impl Hash for Sid {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.to_vec().hash(state);
+    }
+}
+
 impl Sid {
     /// # Safety
     ///
@@ -47,7 +85,7 @@ impl Sid {
                 return None;
             }
             let len = GetLengthSid(psid) as usize;
-            let dst = LocalAlloc(0, len) as PSID;
+            let dst = LocalAlloc(LMEM_FIXED, len) as PSID;
             if dst.is_null() {
                 return None;
             }
@@ -59,8 +97,23 @@ impl Sid {
         }
     }
 
-    pub fn from_string(s: &str) -> Result<Self, WinError> {
-        let wide = WideCString::new(s);
+    pub fn from_bytes(bytes: &[u8]) -> Result<Self, WinError> {
+        unsafe {
+            let len = bytes.len();
+            let dst = LocalAlloc(LMEM_FIXED, len) as PSID;
+            if dst.is_null() {
+                return Err(GetLastError().into());
+            }
+            copy_nonoverlapping(bytes.as_ptr(), dst as _, len);
+            Ok(Self { psid: dst, len })
+        }
+    }
+
+    pub fn from_string<S>(s: S) -> Result<Self, WinError>
+    where
+        S: AsRef<str>,
+    {
+        let wide = WideCString::new(s.as_ref());
         let mut sid_ptr: PSID = null_mut();
         let ok = unsafe { ConvertStringSidToSidW(wide.as_ptr(), &mut sid_ptr) };
         if ok == FALSE || sid_ptr.is_null() {

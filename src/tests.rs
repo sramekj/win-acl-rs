@@ -114,6 +114,7 @@ mod sd_tests {
     }
 
     mod sid {
+        use crate::sid::Sid;
         use crate::tests::sd_tests::create_test_descriptor;
 
         #[test]
@@ -125,6 +126,8 @@ mod sd_tests {
             let owner_sid = sd.owner_sid().unwrap();
 
             assert!(owner_sid.is_valid());
+
+            println!("{}", owner_sid);
 
             assert!(owner_sid.to_string().is_ok_and(|s| !s.is_empty()));
         }
@@ -140,6 +143,26 @@ mod sd_tests {
             assert!(group_sid.is_valid());
 
             assert!(group_sid.to_string().is_ok_and(|s| !s.is_empty()));
+        }
+
+        #[test]
+        fn test_sid_from_string() {
+            const TEST_SID: &str = "S-1-5-21-1402048822-409899687-2319524958-1001";
+            let sid = TEST_SID.parse::<Sid>().unwrap();
+            assert!(sid.is_valid());
+            assert!(sid.to_string().is_ok_and(|s| s == TEST_SID));
+        }
+
+        #[test]
+        fn test_sid_clone() {
+            const TEST_SID: &str = "S-1-5-21-1402048822-409899687-2319524958-1001";
+            let sid1 = TEST_SID.parse::<Sid>().unwrap();
+            assert!(sid1.is_valid());
+            let sid2 = sid1.clone();
+            assert!(sid2.is_valid());
+            assert_eq!(sid1, sid2);
+            assert_eq!(sid1.to_string(), sid2.to_string());
+            assert_eq!(sid1.to_vec(), sid2.to_vec());
         }
     }
 }
