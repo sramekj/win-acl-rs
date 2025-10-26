@@ -164,5 +164,11 @@ mod sd_tests {
             assert_eq!(sid1.to_string(), sid2.to_string());
             assert_eq!(sid1.to_vec(), sid2.to_vec());
         }
+
+        #[test]
+        fn test_well_known() {
+            let sid = Sid::from_well_known_sid(crate::wellknown::WinAnonymousSid).unwrap();
+            assert!(sid.is_valid());
+        }
     }
 }

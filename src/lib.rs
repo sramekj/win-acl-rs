@@ -11,6 +11,7 @@ pub mod elevated;
 pub mod sd;
 pub mod sid;
 mod utils;
+pub mod wellknown;
 
 mod macros;
 

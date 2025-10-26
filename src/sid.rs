@@ -2,6 +2,7 @@
 
 use crate::error::WinError;
 use crate::utils::WideCString;
+use crate::winapi_bool_call;
 use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
 use std::marker::PhantomData;
@@ -9,7 +10,10 @@ use std::ptr::{copy_nonoverlapping, null_mut};
 use std::str::FromStr;
 use windows_sys::Win32::Foundation::{FALSE, GetLastError, LocalFree};
 use windows_sys::Win32::Security::Authorization::{ConvertSidToStringSidW, ConvertStringSidToSidW};
-use windows_sys::Win32::Security::{CopySid, GetLengthSid, IsValidSid, PSID, SID};
+use windows_sys::Win32::Security::{
+    CopySid, CreateWellKnownSid, GetLengthSid, IsValidSid, PSID, SECURITY_MAX_SID_SIZE, SID,
+    WELL_KNOWN_SID_TYPE,
+};
 use windows_sys::Win32::System::Memory::{LMEM_FIXED, LocalAlloc};
 
 /// Owned SID structure, opaque
@@ -72,6 +76,19 @@ impl Hash for Sid {
     }
 }
 
+impl TryFrom<&[u8]> for Sid {
+    type Error = WinError;
+    fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
+        Self::from_bytes(value)
+    }
+}
+
+impl From<Sid> for Vec<u8> {
+    fn from(sid: Sid) -> Self {
+        sid.to_vec()
+    }
+}
+
 impl Sid {
     /// # Safety
     ///
@@ -121,6 +138,20 @@ impl Sid {
         }
         let len = unsafe { GetLengthSid(sid_ptr) as usize };
         Ok(Sid { psid: sid_ptr, len })
+    }
+
+    pub fn from_well_known_sid(kind: WELL_KNOWN_SID_TYPE) -> Result<Self, WinError> {
+        let mut buf = vec![0u8; SECURITY_MAX_SID_SIZE as usize];
+        let mut size = buf.len() as u32;
+        unsafe {
+            winapi_bool_call!(CreateWellKnownSid(
+                kind,
+                null_mut() as PSID,
+                buf.as_mut_ptr() as PSID,
+                &mut size
+            ))
+        };
+        Self::from_bytes(&buf[..size as usize])
     }
 
     pub fn is_valid(&self) -> bool {

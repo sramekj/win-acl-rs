@@ -13,7 +13,7 @@
 <a href=#13 id=13 data-nosnippet>13</a></span><span class="macro">macro_rules!</span> winapi_bool_call {
 <a href=#14 id=14 data-nosnippet>14</a>    (<span class="macro-nonterminal">$expr</span>:expr, <span class="macro-nonterminal">$cleanup</span>:block) =&gt; {{
 <a href=#15 id=15 data-nosnippet>15</a>        <span class="kw">let </span>result = <span class="macro-nonterminal">$expr</span>;
-<a href=#16 id=16 data-nosnippet>16</a>        <span class="kw">if </span>result == <span class="number">0 </span>{
+<a href=#16 id=16 data-nosnippet>16</a>        <span class="kw">if </span>result == windows_sys::Win32::Foundation::FALSE {
 <a href=#17 id=17 data-nosnippet>17</a>            <span class="macro-nonterminal">$cleanup
 <a href=#18 id=18 data-nosnippet>18</a>            </span><span class="attr">#[allow(unused_unsafe)]
 <a href=#19 id=19 data-nosnippet>19</a>            </span><span class="kw">return </span>core::result::Result::Err(<span class="kw">unsafe </span>{ windows_sys::Win32::Foundation::GetLastError().into() });
@@ -21,7 +21,7 @@
 <a href=#21 id=21 data-nosnippet>21</a>    }};
 <a href=#22 id=22 data-nosnippet>22</a>    (<span class="macro-nonterminal">$expr</span>:expr) =&gt; {{
 <a href=#23 id=23 data-nosnippet>23</a>        <span class="kw">let </span>result = <span class="macro-nonterminal">$expr</span>;
-<a href=#24 id=24 data-nosnippet>24</a>        <span class="kw">if </span>result == <span class="number">0 </span>{
+<a href=#24 id=24 data-nosnippet>24</a>        <span class="kw">if </span>result == windows_sys::Win32::Foundation::FALSE {
 <a href=#25 id=25 data-nosnippet>25</a>            <span class="attr">#[allow(unused_unsafe)]
 <a href=#26 id=26 data-nosnippet>26</a>            </span><span class="kw">return </span>core::result::Result::Err(<span class="kw">unsafe </span>{ windows_sys::Win32::Foundation::GetLastError().into() });
 <a href=#27 id=27 data-nosnippet>27</a>        }
