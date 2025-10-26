@@ -2,7 +2,7 @@
     ($expr:expr, $cleanup:block) =&gt; { ... };
     ($expr:expr) =&gt; { ... };
 }</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Windows api call that returns boolean result</p>
-<p>expands to:</p>
+<p>expands approximately to:</p>
 <div class="example-wrap"><pre class="language-text"><code>let err = unsafe_call();
 if result = 0 {
     { optional cleanup block }

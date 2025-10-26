@@ -4,13 +4,13 @@ use crate::error::WinError;
 use crate::sid::account::{AccountLookup, lookup_account_name, lookup_account_sid};
 use crate::trustee::Trustee;
 use crate::utils::WideCString;
-use crate::winapi_bool_call;
+use crate::{assert_free, winapi_bool_call};
 use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
 use std::marker::PhantomData;
 use std::ptr::{copy_nonoverlapping, null_mut};
 use std::str::FromStr;
-use windows_sys::Win32::Foundation::{ERROR_OUTOFMEMORY, FALSE, GetLastError, LocalFree};
+use windows_sys::Win32::Foundation::{ERROR_OUTOFMEMORY, FALSE, GetLastError};
 use windows_sys::Win32::Security::Authorization::{ConvertSidToStringSidW, ConvertStringSidToSidW};
 use windows_sys::Win32::Security::{
     CopySid, CreateWellKnownSid, GetLengthSid, IsValidSid, PSID, SECURITY_MAX_SID_SIZE, SID,
@@ -35,10 +35,7 @@ pub struct SidRef<'a> {
 impl Drop for Sid {
     fn drop(&mut self) {
         unsafe {
-            if !self.psid.is_null() {
-                let freed = LocalFree(self.psid as _);
-                debug_assert!(freed.is_null(), "LocalFree failed in Drop!");
-            }
+            assert_free!(self.psid, "Sid::drop");
         }
     }
 }
@@ -106,7 +103,7 @@ impl Sid {
                 return Err(ERROR_OUTOFMEMORY.into());
             }
             winapi_bool_call!(CopySid(len as u32, dst, psid), {
-                LocalFree(dst as _);
+                assert_free!(dst, "Sid::from_ptr_clone");
             });
             Ok(Self { psid: dst, len })
         }
@@ -169,12 +166,9 @@ impl Sid {
 
     pub fn to_string(&self) -> Result<String, WinError> {
         let mut str_ptr: *mut u16 = null_mut();
-        let ok = unsafe { ConvertSidToStringSidW(self.psid, &mut str_ptr) };
-        if ok == FALSE {
-            return Err(unsafe { GetLastError().into() });
-        }
+        unsafe { winapi_bool_call!(ConvertSidToStringSidW(self.psid, &mut str_ptr)) }
         let s = WideCString::from_wide_null_ptr(str_ptr).as_string();
-        unsafe { LocalFree(str_ptr as _) };
+        unsafe { assert_free!(str_ptr, "Sid::to_string") };
         Ok(s)
     }
 
@@ -227,12 +221,11 @@ impl<'a> SidRef<'a> {
 
     pub fn to_string(&self) -> Result<String, WinError> {
         let mut str_ptr: *mut u16 = null_mut();
-        let ok = unsafe { ConvertSidToStringSidW(self.ptr as PSID, &mut str_ptr) };
-        if ok == 0 {
-            return Err(unsafe { GetLastError().into() });
-        }
+        unsafe { winapi_bool_call!(ConvertSidToStringSidW(self.ptr as PSID, &mut str_ptr)) }
         let s = WideCString::from_wide_null_ptr(str_ptr).as_string();
-        unsafe { LocalFree(str_ptr as _) };
+        unsafe {
+            assert_free!(str_ptr, "SidRef<'a>::to_string");
+        }
         Ok(s)
     }
 }
@@ -297,7 +290,7 @@ pub mod account {
                     &mut sid_type,
                 ),
                 {
-                    LocalFree(sid as _);
+                    assert_free!(sid, "account::lookup_account_name()");
                 }
             )
         };
@@ -305,7 +298,9 @@ pub mod account {
         let domain = String::from_utf16_lossy(&domain_buf[..domain_size as usize]);
         let sid_obj = unsafe { Sid::from_ptr_clone(sid) }?;
 
-        unsafe { LocalFree(sid as _) };
+        unsafe {
+            assert_free!(sid, "account::lookup_account_name()");
+        };
 
         Ok(AccountLookup {
             name: sid_obj.to_string()?,

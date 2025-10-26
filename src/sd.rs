@@ -7,14 +7,14 @@ use crate::elevated::{Elevated, PrivilegeLevel, PrivilegeTokenImpl, Unprivileged
 use crate::error::WinError;
 use crate::sid::Sid;
 use crate::utils::WideCString;
-use crate::{winapi_bool_call, winapi_call};
+use crate::{assert_free, winapi_bool_call, winapi_call};
 use std::ffi::OsStr;
 use std::marker::PhantomData;
 use std::path::Path;
 use std::ptr::null_mut;
 use std::slice::from_raw_parts;
 use std::str::FromStr;
-use windows_sys::Win32::Foundation::{LocalFree, TRUE};
+use windows_sys::Win32::Foundation::TRUE;
 use windows_sys::Win32::Security::Authorization::{
     ConvertSecurityDescriptorToStringSecurityDescriptorW,
     ConvertStringSecurityDescriptorToSecurityDescriptorW, GetNamedSecurityInfoW, SDDL_REVISION_1,
@@ -109,10 +109,7 @@ impl SecurityDescriptorImpl<Unprivileged> {
 impl<P: PrivilegeLevel> Drop for SecurityDescriptorImpl<P> {
     fn drop(&mut self) {
         unsafe {
-            if !self.sd_ptr.is_null() {
-                let freed = LocalFree(self.sd_ptr as _);
-                debug_assert!(freed.is_null(), "LocalFree failed in Drop!");
-            }
+            assert_free!(self.sd_ptr, "SecurityDescriptorImpl::drop");
         }
     }
 }
@@ -339,8 +336,7 @@ impl<P: PrivilegeLevel> SecurityDescriptorImpl<P> {
         let string = WideCString::from_wide_slice(slice);
 
         if !buf_ptr.is_null() {
-            let freed = unsafe { LocalFree(buf_ptr as _) };
-            debug_assert!(freed.is_null(), "LocalFree failed in as_sd_string()!");
+            unsafe { assert_free!(buf_ptr, "SecurityDescriptorImpl::as_sd_string()") };
         }
 
         Ok(string.as_string())
