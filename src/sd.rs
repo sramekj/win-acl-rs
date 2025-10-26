@@ -347,11 +347,17 @@ impl<P: PrivilegeLevel> SecurityDescriptorImpl<P> {
     }
 
     pub fn owner_sid(&self) -> Option<Sid> {
-        unsafe { Sid::from_ptr_clone(self.owner_sid_ptr) }
+        if self.owner_sid_ptr.is_null() {
+            return None;
+        }
+        unsafe { Sid::from_ptr_clone(self.owner_sid_ptr) }.ok()
     }
 
     pub fn group_sid(&self) -> Option<Sid> {
-        unsafe { Sid::from_ptr_clone(self.group_sid_ptr) }
+        if self.group_sid_ptr.is_null() {
+            return None;
+        }
+        unsafe { Sid::from_ptr_clone(self.group_sid_ptr) }.ok()
     }
 
     pub fn dacl(&self) -> Option<Acl> {

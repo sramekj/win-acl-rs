@@ -1,6 +1,7 @@
 //! TODO
 
 use crate::error::WinError;
+use crate::sid::account::{AccountLookup, lookup_account_name, lookup_account_sid};
 use crate::utils::WideCString;
 use crate::winapi_bool_call;
 use std::fmt::{Display, Formatter};
@@ -8,7 +9,7 @@ use std::hash::{Hash, Hasher};
 use std::marker::PhantomData;
 use std::ptr::{copy_nonoverlapping, null_mut};
 use std::str::FromStr;
-use windows_sys::Win32::Foundation::{FALSE, GetLastError, LocalFree};
+use windows_sys::Win32::Foundation::{ERROR_OUTOFMEMORY, FALSE, GetLastError, LocalFree};
 use windows_sys::Win32::Security::Authorization::{ConvertSidToStringSidW, ConvertStringSidToSidW};
 use windows_sys::Win32::Security::{
     CopySid, CreateWellKnownSid, GetLengthSid, IsValidSid, PSID, SECURITY_MAX_SID_SIZE, SID,
@@ -93,24 +94,20 @@ impl Sid {
     /// # Safety
     ///
     /// TODO!
-    pub unsafe fn from_ptr_clone(psid: PSID) -> Option<Self> {
-        if psid.is_null() {
-            return None;
-        }
+    pub unsafe fn from_ptr_clone(psid: PSID) -> Result<Self, WinError> {
         unsafe {
-            if IsValidSid(psid) == FALSE {
-                return None;
+            if psid.is_null() || IsValidSid(psid) == FALSE {
+                return Err("Either psid is null or is not valid".into());
             }
             let len = GetLengthSid(psid) as usize;
             let dst = LocalAlloc(LMEM_FIXED, len) as PSID;
             if dst.is_null() {
-                return None;
+                return Err(ERROR_OUTOFMEMORY.into());
             }
-            if CopySid(len as u32, dst, psid) == FALSE {
+            winapi_bool_call!(CopySid(len as u32, dst, psid), {
                 LocalFree(dst as _);
-                return None;
-            }
-            Some(Self { psid: dst, len })
+            });
+            Ok(Self { psid: dst, len })
         }
     }
 
@@ -119,7 +116,7 @@ impl Sid {
             let len = bytes.len();
             let dst = LocalAlloc(LMEM_FIXED, len) as PSID;
             if dst.is_null() {
-                return Err(GetLastError().into());
+                return Err(ERROR_OUTOFMEMORY.into());
             }
             copy_nonoverlapping(bytes.as_ptr(), dst as _, len);
             Ok(Self { psid: dst, len })
@@ -152,6 +149,17 @@ impl Sid {
             ))
         };
         Self::from_bytes(&buf[..size as usize])
+    }
+
+    pub fn from_account_name<S>(name: S) -> Result<Self, WinError>
+    where
+        S: AsRef<str>,
+    {
+        unsafe { lookup_account_name(name).map(|a| Self::from_string(&a.name).unwrap()) }
+    }
+
+    pub fn lookup_name(&self) -> Result<AccountLookup, WinError> {
+        unsafe { lookup_account_sid(self.psid) }
     }
 
     pub fn is_valid(&self) -> bool {
@@ -221,5 +229,130 @@ impl<'a> SidRef<'a> {
         let s = WideCString::from_wide_null_ptr(str_ptr).as_string();
         unsafe { LocalFree(str_ptr as _) };
         Ok(s)
+    }
+}
+
+mod account {
+    use super::*;
+    use windows_sys::Win32::Security::{LookupAccountNameW, LookupAccountSidW, SID_NAME_USE};
+
+    #[derive(Debug, Clone)]
+    pub struct AccountLookup {
+        pub name: String,
+        pub domain: String,
+        pub sid_type: SID_NAME_USE,
+    }
+
+    /// # Safety
+    ///
+    /// TODO!
+    pub(crate) unsafe fn lookup_account_name<S>(account: S) -> Result<AccountLookup, WinError>
+    where
+        S: AsRef<str>,
+    {
+        let wide_account = WideCString::new(account.as_ref());
+
+        let mut sid_size = 0u32;
+        let mut domain_size = 0u32;
+        let mut sid_type: SID_NAME_USE = 0;
+
+        unsafe {
+            LookupAccountNameW(
+                null_mut(),
+                wide_account.as_ptr(),
+                null_mut(),
+                &mut sid_size,
+                null_mut(),
+                &mut domain_size,
+                &mut sid_type,
+            );
+        }
+
+        let err = unsafe { GetLastError() };
+        if err != windows_sys::Win32::Foundation::ERROR_INSUFFICIENT_BUFFER {
+            return Err(err.into());
+        }
+
+        let sid = unsafe { LocalAlloc(LMEM_FIXED, sid_size as usize) as PSID };
+        if sid.is_null() {
+            return Err(ERROR_OUTOFMEMORY.into());
+        }
+
+        let mut domain_buf = vec![0u16; domain_size as usize];
+
+        unsafe {
+            winapi_bool_call!(
+                LookupAccountNameW(
+                    null_mut(),
+                    wide_account.as_ptr(),
+                    sid,
+                    &mut sid_size,
+                    domain_buf.as_mut_ptr(),
+                    &mut domain_size,
+                    &mut sid_type,
+                ),
+                {
+                    LocalFree(sid as _);
+                }
+            )
+        };
+
+        let domain = String::from_utf16_lossy(&domain_buf[..domain_size as usize]);
+        let sid_obj = unsafe { Sid::from_ptr_clone(sid) }?;
+
+        unsafe { LocalFree(sid as _) };
+
+        Ok(AccountLookup {
+            name: sid_obj.to_string()?,
+            domain,
+            sid_type,
+        })
+    }
+
+    /// # Safety
+    ///
+    /// TODO!
+    pub(crate) unsafe fn lookup_account_sid(sid: PSID) -> Result<AccountLookup, WinError> {
+        let mut name_size = 0u32;
+        let mut domain_size = 0u32;
+        let mut sid_type: SID_NAME_USE = 0;
+
+        unsafe {
+            LookupAccountSidW(
+                null_mut(),
+                sid,
+                null_mut(),
+                &mut name_size,
+                null_mut(),
+                &mut domain_size,
+                &mut sid_type,
+            );
+        }
+
+        let err = unsafe { GetLastError() };
+        if err != windows_sys::Win32::Foundation::ERROR_INSUFFICIENT_BUFFER {
+            return Err(err.into());
+        }
+
+        let mut name_buf = vec![0u16; name_size as usize];
+        let mut domain_buf = vec![0u16; domain_size as usize];
+
+        unsafe {
+            winapi_bool_call!(LookupAccountSidW(
+                null_mut(),
+                sid,
+                name_buf.as_mut_ptr(),
+                &mut name_size,
+                domain_buf.as_mut_ptr(),
+                &mut domain_size,
+                &mut sid_type,
+            ))
+        }
+
+        Ok(AccountLookup {
+            name: String::from_utf16_lossy(&name_buf[..name_size as usize]),
+            domain: String::from_utf16_lossy(&domain_buf[..domain_size as usize]),
+            sid_type,
+        })
     }
 }

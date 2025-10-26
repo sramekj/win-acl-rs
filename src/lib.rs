@@ -33,26 +33,54 @@ pub mod error {
     ///
     /// see: [MSDN](https://learn.microsoft.com/en-us/windows/win32/debug/system-error-codes--0-499-)
     ///
-    #[derive(Copy, Clone, Eq, PartialEq, Default)]
-    pub struct WinError(pub u32);
+    #[derive(Clone, Eq, PartialEq, Default)]
+    pub struct WinError {
+        pub code: u32,
+        pub message: Option<String>,
+    }
 
     impl Display for WinError {
         fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
-            write!(f, "{:#010x}", self.0)
+            if let Some(msg) = &self.message {
+                write!(f, "{}", msg)?
+            }
+            write!(f, "HRESULT: {:#010x}", self.code)
         }
     }
 
     impl Debug for WinError {
         fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
             f.debug_struct("WinError")
-                .field("HRESULT", &format_args!("{:#010x}", self.0))
+                .field("code", &format_args!("HRESULT: {:#010x}", self.code))
+                .field("message", &format_args!("{:?}", self.message))
                 .finish()
         }
     }
 
     impl From<WIN32_ERROR> for WinError {
         fn from(value: WIN32_ERROR) -> Self {
-            WinError(value)
+            WinError {
+                code: value,
+                message: None,
+            }
+        }
+    }
+
+    impl From<String> for WinError {
+        fn from(value: String) -> Self {
+            WinError {
+                code: 0,
+                message: Some(value),
+            }
+        }
+    }
+
+    impl From<&str> for WinError {
+        fn from(value: &str) -> Self {
+            WinError {
+                code: 0,
+                message: Some(value.to_owned()),
+            }
         }
     }
 }
