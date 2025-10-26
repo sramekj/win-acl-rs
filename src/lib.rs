@@ -10,6 +10,7 @@ pub mod acl;
 pub mod elevated;
 pub mod sd;
 pub mod sid;
+pub mod trustee;
 mod utils;
 pub mod wellknown;
 

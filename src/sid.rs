@@ -2,6 +2,7 @@
 
 use crate::error::WinError;
 use crate::sid::account::{AccountLookup, lookup_account_name, lookup_account_sid};
+use crate::trustee::Trustee;
 use crate::utils::WideCString;
 use crate::winapi_bool_call;
 use std::fmt::{Display, Formatter};
@@ -175,6 +176,10 @@ impl Sid {
         let s = WideCString::from_wide_null_ptr(str_ptr).as_string();
         unsafe { LocalFree(str_ptr as _) };
         Ok(s)
+    }
+
+    pub fn as_trustee(&'_ self) -> Trustee<'_> {
+        Trustee::from_sid(self)
     }
 
     pub fn as_ptr(&self) -> *const SID {
