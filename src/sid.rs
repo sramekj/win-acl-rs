@@ -237,7 +237,7 @@ impl<'a> SidRef<'a> {
     }
 }
 
-mod account {
+pub mod account {
     use super::*;
     use windows_sys::Win32::Security::{LookupAccountNameW, LookupAccountSidW, SID_NAME_USE};
 
