@@ -27,6 +27,23 @@ impl WideCString {
         Self { inner }
     }
 
+    /// must LocalFree the pointer after using->and owning the value
+    pub fn from_wide_null_ptr(ptr: *const u16) -> Self {
+        if ptr.is_null() {
+            return Self { inner: Vec::new() };
+        }
+        unsafe {
+            let mut len = 0;
+            while *ptr.add(len) != 0 {
+                len += 1;
+            }
+            let slice = std::slice::from_raw_parts(ptr, len);
+            Self {
+                inner: slice.to_vec(),
+            }
+        }
+    }
+
     #[allow(dead_code)]
     pub fn as_os_string(&self) -> OsString {
         OsString::from_wide(self.inner.as_ref())

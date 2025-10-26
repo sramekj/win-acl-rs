@@ -13,7 +13,7 @@
 macro_rules! winapi_bool_call {
     ($expr:expr, $cleanup:block) => {{
         let result = $expr;
-        if result == 0 {
+        if result == windows_sys::Win32::Foundation::FALSE {
             $cleanup
             #[allow(unused_unsafe)]
             return core::result::Result::Err(unsafe { windows_sys::Win32::Foundation::GetLastError().into() });
@@ -21,7 +21,7 @@ macro_rules! winapi_bool_call {
     }};
     ($expr:expr) => {{
         let result = $expr;
-        if result == 0 {
+        if result == windows_sys::Win32::Foundation::FALSE {
             #[allow(unused_unsafe)]
             return core::result::Result::Err(unsafe { windows_sys::Win32::Foundation::GetLastError().into() });
         }

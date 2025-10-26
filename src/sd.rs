@@ -346,18 +346,15 @@ impl<P: PrivilegeLevel> SecurityDescriptorImpl<P> {
         Ok(string.as_string())
     }
 
-    /// TODO
-    pub fn owner_sid(&self) -> Option<&Sid> {
-        todo!()
+    pub fn owner_sid(&self) -> Option<Sid> {
+        unsafe { Sid::from_ptr_clone(self.owner_sid_ptr) }
     }
 
-    /// TODO
-    pub fn group_sid(&self) -> Option<&Sid> {
-        todo!()
+    pub fn group_sid(&self) -> Option<Sid> {
+        unsafe { Sid::from_ptr_clone(self.group_sid_ptr) }
     }
 
-    /// TODO
-    pub fn dacl(&self) -> Option<&Acl> {
+    pub fn dacl(&self) -> Option<Acl> {
         todo!()
     }
 
