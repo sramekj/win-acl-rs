@@ -8,6 +8,7 @@
 
 pub mod acl;
 pub mod elevated;
+pub mod mask;
 pub mod sd;
 pub mod sid;
 pub mod trustee;

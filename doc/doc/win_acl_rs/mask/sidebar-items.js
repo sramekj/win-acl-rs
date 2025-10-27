@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["DELETE","GENERIC_ALL","GENERIC_EXECUTE","GENERIC_READ","GENERIC_WRITE","READ_CONTROL","STANDARD_RIGHTS_ALL","SYNCHRONIZE","WRITE_DAC","WRITE_OWNER"],"struct":["AccessMask","FileAccess","PrinterAccess","RegistryAccess","ServiceAccess"]};
