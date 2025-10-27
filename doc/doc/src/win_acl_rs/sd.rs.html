@@ -357,60 +357,64 @@
 <a href=#357 id=357 data-nosnippet>357</a>    }
 <a href=#358 id=358 data-nosnippet>358</a>
 <a href=#359 id=359 data-nosnippet>359</a>    <span class="kw">pub fn </span>dacl(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;Acl&gt; {
-<a href=#360 id=360 data-nosnippet>360</a>        <span class="macro">todo!</span>()
-<a href=#361 id=361 data-nosnippet>361</a>    }
-<a href=#362 id=362 data-nosnippet>362</a>
-<a href=#363 id=363 data-nosnippet>363</a>    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>create_sd(
-<a href=#364 id=364 data-nosnippet>364</a>        obj_name: PCWSTR,
-<a href=#365 id=365 data-nosnippet>365</a>        obj_type: SE_OBJECT_TYPE,
-<a href=#366 id=366 data-nosnippet>366</a>        flags: OBJECT_SECURITY_INFORMATION,
-<a href=#367 id=367 data-nosnippet>367</a>    ) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, WinError&gt; {
-<a href=#368 id=368 data-nosnippet>368</a>        <span class="kw">let </span><span class="kw-2">mut </span>sd_ptr: PSECURITY_DESCRIPTOR = null_mut();
-<a href=#369 id=369 data-nosnippet>369</a>        <span class="kw">let </span><span class="kw-2">mut </span>dacl_ptr: <span class="kw-2">*mut </span>ACL = null_mut();
-<a href=#370 id=370 data-nosnippet>370</a>        <span class="kw">let </span><span class="kw-2">mut </span>sacl_ptr: <span class="kw-2">*mut </span>ACL = null_mut();
-<a href=#371 id=371 data-nosnippet>371</a>        <span class="kw">let </span><span class="kw-2">mut </span>owner_sid_ptr: PSID = null_mut();
-<a href=#372 id=372 data-nosnippet>372</a>        <span class="kw">let </span><span class="kw-2">mut </span>group_sid_ptr: PSID = null_mut();
-<a href=#373 id=373 data-nosnippet>373</a>
-<a href=#374 id=374 data-nosnippet>374</a>        <span class="kw">unsafe </span>{
-<a href=#375 id=375 data-nosnippet>375</a>            <span class="macro">winapi_call!</span>(GetNamedSecurityInfoW(
-<a href=#376 id=376 data-nosnippet>376</a>                obj_name,
-<a href=#377 id=377 data-nosnippet>377</a>                obj_type,
-<a href=#378 id=378 data-nosnippet>378</a>                flags,
-<a href=#379 id=379 data-nosnippet>379</a>                <span class="kw-2">&amp;mut </span>owner_sid_ptr,
-<a href=#380 id=380 data-nosnippet>380</a>                <span class="kw-2">&amp;mut </span>group_sid_ptr,
-<a href=#381 id=381 data-nosnippet>381</a>                <span class="kw-2">&amp;mut </span>dacl_ptr,
-<a href=#382 id=382 data-nosnippet>382</a>                <span class="kw-2">&amp;mut </span>sacl_ptr,
-<a href=#383 id=383 data-nosnippet>383</a>                <span class="kw-2">&amp;mut </span>sd_ptr,
-<a href=#384 id=384 data-nosnippet>384</a>            ))
-<a href=#385 id=385 data-nosnippet>385</a>        };
-<a href=#386 id=386 data-nosnippet>386</a>
-<a href=#387 id=387 data-nosnippet>387</a>        <span class="prelude-val">Ok</span>(<span class="self">Self </span>{
-<a href=#388 id=388 data-nosnippet>388</a>            sd_ptr,
-<a href=#389 id=389 data-nosnippet>389</a>            dacl_ptr,
-<a href=#390 id=390 data-nosnippet>390</a>            sacl_ptr,
-<a href=#391 id=391 data-nosnippet>391</a>            owner_sid_ptr,
-<a href=#392 id=392 data-nosnippet>392</a>            group_sid_ptr,
-<a href=#393 id=393 data-nosnippet>393</a>            _priv: PhantomData,
-<a href=#394 id=394 data-nosnippet>394</a>        })
-<a href=#395 id=395 data-nosnippet>395</a>    }
-<a href=#396 id=396 data-nosnippet>396</a>}
-<a href=#397 id=397 data-nosnippet>397</a>
-<a href=#398 id=398 data-nosnippet>398</a><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">trait </span>ObjectSecurityEx {
-<a href=#399 id=399 data-nosnippet>399</a>    <span class="kw">fn </span>get_elevated() -&gt; OBJECT_SECURITY_INFORMATION;
-<a href=#400 id=400 data-nosnippet>400</a>    <span class="kw">fn </span>get_safe() -&gt; OBJECT_SECURITY_INFORMATION;
-<a href=#401 id=401 data-nosnippet>401</a>    <span class="kw">fn </span>get_all() -&gt; OBJECT_SECURITY_INFORMATION;
-<a href=#402 id=402 data-nosnippet>402</a>}
-<a href=#403 id=403 data-nosnippet>403</a>
-<a href=#404 id=404 data-nosnippet>404</a><span class="kw">impl </span>ObjectSecurityEx <span class="kw">for </span>OBJECT_SECURITY_INFORMATION {
-<a href=#405 id=405 data-nosnippet>405</a>    <span class="kw">fn </span>get_elevated() -&gt; OBJECT_SECURITY_INFORMATION {
-<a href=#406 id=406 data-nosnippet>406</a>        SACL_SECURITY_INFORMATION
-<a href=#407 id=407 data-nosnippet>407</a>    }
-<a href=#408 id=408 data-nosnippet>408</a>
-<a href=#409 id=409 data-nosnippet>409</a>    <span class="kw">fn </span>get_safe() -&gt; OBJECT_SECURITY_INFORMATION {
-<a href=#410 id=410 data-nosnippet>410</a>        OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION
+<a href=#360 id=360 data-nosnippet>360</a>        <span class="kw">if </span><span class="self">self</span>.dacl_ptr.is_null() {
+<a href=#361 id=361 data-nosnippet>361</a>            <span class="prelude-val">None
+<a href=#362 id=362 data-nosnippet>362</a>        </span>} <span class="kw">else </span>{
+<a href=#363 id=363 data-nosnippet>363</a>            <span class="prelude-val">Some</span>(<span class="kw">unsafe </span>{ Acl::from_ptr(<span class="self">self</span>.dacl_ptr) })
+<a href=#364 id=364 data-nosnippet>364</a>        }
+<a href=#365 id=365 data-nosnippet>365</a>    }
+<a href=#366 id=366 data-nosnippet>366</a>
+<a href=#367 id=367 data-nosnippet>367</a>    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>create_sd(
+<a href=#368 id=368 data-nosnippet>368</a>        obj_name: PCWSTR,
+<a href=#369 id=369 data-nosnippet>369</a>        obj_type: SE_OBJECT_TYPE,
+<a href=#370 id=370 data-nosnippet>370</a>        flags: OBJECT_SECURITY_INFORMATION,
+<a href=#371 id=371 data-nosnippet>371</a>    ) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, WinError&gt; {
+<a href=#372 id=372 data-nosnippet>372</a>        <span class="kw">let </span><span class="kw-2">mut </span>sd_ptr: PSECURITY_DESCRIPTOR = null_mut();
+<a href=#373 id=373 data-nosnippet>373</a>        <span class="kw">let </span><span class="kw-2">mut </span>dacl_ptr: <span class="kw-2">*mut </span>ACL = null_mut();
+<a href=#374 id=374 data-nosnippet>374</a>        <span class="kw">let </span><span class="kw-2">mut </span>sacl_ptr: <span class="kw-2">*mut </span>ACL = null_mut();
+<a href=#375 id=375 data-nosnippet>375</a>        <span class="kw">let </span><span class="kw-2">mut </span>owner_sid_ptr: PSID = null_mut();
+<a href=#376 id=376 data-nosnippet>376</a>        <span class="kw">let </span><span class="kw-2">mut </span>group_sid_ptr: PSID = null_mut();
+<a href=#377 id=377 data-nosnippet>377</a>
+<a href=#378 id=378 data-nosnippet>378</a>        <span class="kw">unsafe </span>{
+<a href=#379 id=379 data-nosnippet>379</a>            <span class="macro">winapi_call!</span>(GetNamedSecurityInfoW(
+<a href=#380 id=380 data-nosnippet>380</a>                obj_name,
+<a href=#381 id=381 data-nosnippet>381</a>                obj_type,
+<a href=#382 id=382 data-nosnippet>382</a>                flags,
+<a href=#383 id=383 data-nosnippet>383</a>                <span class="kw-2">&amp;mut </span>owner_sid_ptr,
+<a href=#384 id=384 data-nosnippet>384</a>                <span class="kw-2">&amp;mut </span>group_sid_ptr,
+<a href=#385 id=385 data-nosnippet>385</a>                <span class="kw-2">&amp;mut </span>dacl_ptr,
+<a href=#386 id=386 data-nosnippet>386</a>                <span class="kw-2">&amp;mut </span>sacl_ptr,
+<a href=#387 id=387 data-nosnippet>387</a>                <span class="kw-2">&amp;mut </span>sd_ptr,
+<a href=#388 id=388 data-nosnippet>388</a>            ))
+<a href=#389 id=389 data-nosnippet>389</a>        };
+<a href=#390 id=390 data-nosnippet>390</a>
+<a href=#391 id=391 data-nosnippet>391</a>        <span class="prelude-val">Ok</span>(<span class="self">Self </span>{
+<a href=#392 id=392 data-nosnippet>392</a>            sd_ptr,
+<a href=#393 id=393 data-nosnippet>393</a>            dacl_ptr,
+<a href=#394 id=394 data-nosnippet>394</a>            sacl_ptr,
+<a href=#395 id=395 data-nosnippet>395</a>            owner_sid_ptr,
+<a href=#396 id=396 data-nosnippet>396</a>            group_sid_ptr,
+<a href=#397 id=397 data-nosnippet>397</a>            _priv: PhantomData,
+<a href=#398 id=398 data-nosnippet>398</a>        })
+<a href=#399 id=399 data-nosnippet>399</a>    }
+<a href=#400 id=400 data-nosnippet>400</a>}
+<a href=#401 id=401 data-nosnippet>401</a>
+<a href=#402 id=402 data-nosnippet>402</a><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">trait </span>ObjectSecurityEx {
+<a href=#403 id=403 data-nosnippet>403</a>    <span class="kw">fn </span>get_elevated() -&gt; OBJECT_SECURITY_INFORMATION;
+<a href=#404 id=404 data-nosnippet>404</a>    <span class="kw">fn </span>get_safe() -&gt; OBJECT_SECURITY_INFORMATION;
+<a href=#405 id=405 data-nosnippet>405</a>    <span class="kw">fn </span>get_all() -&gt; OBJECT_SECURITY_INFORMATION;
+<a href=#406 id=406 data-nosnippet>406</a>}
+<a href=#407 id=407 data-nosnippet>407</a>
+<a href=#408 id=408 data-nosnippet>408</a><span class="kw">impl </span>ObjectSecurityEx <span class="kw">for </span>OBJECT_SECURITY_INFORMATION {
+<a href=#409 id=409 data-nosnippet>409</a>    <span class="kw">fn </span>get_elevated() -&gt; OBJECT_SECURITY_INFORMATION {
+<a href=#410 id=410 data-nosnippet>410</a>        SACL_SECURITY_INFORMATION
 <a href=#411 id=411 data-nosnippet>411</a>    }
 <a href=#412 id=412 data-nosnippet>412</a>
-<a href=#413 id=413 data-nosnippet>413</a>    <span class="kw">fn </span>get_all() -&gt; OBJECT_SECURITY_INFORMATION {
-<a href=#414 id=414 data-nosnippet>414</a>        <span class="self">Self</span>::get_elevated() | <span class="self">Self</span>::get_safe()
+<a href=#413 id=413 data-nosnippet>413</a>    <span class="kw">fn </span>get_safe() -&gt; OBJECT_SECURITY_INFORMATION {
+<a href=#414 id=414 data-nosnippet>414</a>        OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION
 <a href=#415 id=415 data-nosnippet>415</a>    }
-<a href=#416 id=416 data-nosnippet>416</a>}</code></pre></div></section></main></body></html>
+<a href=#416 id=416 data-nosnippet>416</a>
+<a href=#417 id=417 data-nosnippet>417</a>    <span class="kw">fn </span>get_all() -&gt; OBJECT_SECURITY_INFORMATION {
+<a href=#418 id=418 data-nosnippet>418</a>        <span class="self">Self</span>::get_elevated() | <span class="self">Self</span>::get_safe()
+<a href=#419 id=419 data-nosnippet>419</a>    }
+<a href=#420 id=420 data-nosnippet>420</a>}</code></pre></div></section></main></body></html>

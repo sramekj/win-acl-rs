@@ -357,7 +357,11 @@ impl<P: PrivilegeLevel> SecurityDescriptorImpl<P> {
     }
 
     pub fn dacl(&self) -> Option<Acl> {
-        todo!()
+        if self.dacl_ptr.is_null() {
+            None
+        } else {
+            Some(unsafe { Acl::from_ptr(self.dacl_ptr) })
+        }
     }
 
     pub(crate) fn create_sd(
