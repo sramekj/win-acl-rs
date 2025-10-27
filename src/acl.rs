@@ -4,6 +4,7 @@ use crate::error::WinError;
 use crate::sid::Sid;
 use crate::{assert_free, winapi_bool_call};
 use std::ffi::c_void;
+use std::fmt::{Debug, Formatter};
 use std::marker::PhantomData;
 use windows_sys::Win32::Foundation::{ERROR_OUTOFMEMORY, FALSE};
 use windows_sys::Win32::Security::{
@@ -23,7 +24,6 @@ pub struct Acl {
     owned: bool,
 }
 
-#[derive(Debug)]
 pub struct Ace<'a> {
     ptr: *const c_void,
     _phantom: PhantomData<&'a ACL>,
@@ -53,6 +53,10 @@ impl Drop for Acl {
 }
 
 impl Acl {
+    pub fn new() -> Result<Self, WinError> {
+        Acl::empty()
+    }
+
     pub fn empty() -> Result<Self, WinError> {
         unsafe {
             let size = size_of::<ACL>() as u32;
@@ -196,5 +200,21 @@ impl<'a> Ace<'a> {
 
     pub fn mask(&self) -> u32 {
         unsafe { (*(self.ptr as *const ACCESS_ALLOWED_ACE)).Mask }
+    }
+}
+
+impl<'a> Debug for Ace<'a> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Ace")
+            .field(
+                "account_lookup",
+                &self.sid().unwrap().lookup_name().unwrap(),
+            )
+            .field(
+                "mask",
+                &format_args!("{:b}b, 0x{:X}", &self.mask(), &self.mask()),
+            )
+            .field("ace_type", &self.ace_type())
+            .finish()
     }
 }
