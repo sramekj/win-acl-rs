@@ -2,11 +2,9 @@
 
 use std::str::FromStr;
 use win_acl_rs::acl::{Acl, AclBuilder};
+use win_acl_rs::mask::{FileAccess, PrinterAccess};
 use win_acl_rs::sd::SecurityDescriptor;
 use win_acl_rs::sid::Sid;
-use windows_sys::Win32::Storage::FileSystem::{
-    FILE_GENERIC_EXECUTE, FILE_GENERIC_READ, FILE_GENERIC_WRITE,
-};
 
 fn create_sd() -> SecurityDescriptor {
     const TEST_SD_STRING: &str = "O:S-1-5-21-1402048822-409899687-2319524958-1001G:S-1-5-21-1402048822-409899687-2319524958-1001D:(A;ID;FA;;;SY)(A;ID;FA;;;BA)(A;ID;FA;;;S-1-5-21-1402048822-409899687-2319524958-1001)";
@@ -55,12 +53,15 @@ fn test_add_remove_ace() {
     let sid = Sid::from_account_name("System").unwrap();
     assert!(sid.is_valid());
 
-    acl.add_allowed_ace(FILE_GENERIC_READ, &sid).unwrap();
+    let mask = FileAccess::READ | FileAccess::WRITE;
+
+    acl.add_allowed_ace(mask.bits(), &sid).unwrap();
 
     assert!(acl.is_valid());
     assert_eq!(acl.ace_count(), 1);
 
-    acl.add_denied_ace(FILE_GENERIC_WRITE, &sid).unwrap();
+    let mask = FileAccess::EXECUTE;
+    acl.add_denied_ace(mask.bits(), &sid).unwrap();
 
     assert!(acl.is_valid());
     assert_eq!(acl.ace_count(), 2);
@@ -76,10 +77,11 @@ fn test_add_remove_ace() {
 fn acl_builder_test() {
     let sid = Sid::from_account_name("System").unwrap();
     let builder = AclBuilder::default();
+
     let acl = builder
-        .allow(FILE_GENERIC_READ, &sid)
-        .allow(FILE_GENERIC_WRITE, &sid)
-        .deny(FILE_GENERIC_EXECUTE, &sid)
+        .allow(PrinterAccess::READ.bits(), &sid)
+        .allow(PrinterAccess::WRITE.bits(), &sid)
+        .deny(PrinterAccess::ADMIN.bits(), &sid)
         .build();
 
     assert!(acl.is_valid());
