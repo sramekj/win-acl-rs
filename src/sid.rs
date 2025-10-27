@@ -8,6 +8,7 @@ use crate::{assert_free, winapi_bool_call};
 use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
 use std::marker::PhantomData;
+use std::ops::Deref;
 use std::ptr::{copy_nonoverlapping, null_mut};
 use std::str::FromStr;
 use windows_sys::Win32::Foundation::{ERROR_OUTOFMEMORY, FALSE, GetLastError};
@@ -184,6 +185,19 @@ impl Sid {
         let mut v = vec![0u8; self.len];
         unsafe { CopySid(self.len as u32, v.as_mut_ptr() as *mut _, self.psid) };
         v
+    }
+}
+
+impl AsRef<PSID> for Sid {
+    fn as_ref(&self) -> &PSID {
+        &self.psid
+    }
+}
+
+impl Deref for Sid {
+    type Target = PSID;
+    fn deref(&self) -> &Self::Target {
+        &self.psid
     }
 }
 

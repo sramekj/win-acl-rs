@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["AceType"],"struct":["Ace","Acl","AclIter"]};
+window.SIDEBAR_ITEMS = {"enum":["AceType"],"struct":["Ace","Acl","AclBuilder","AclIter"]};

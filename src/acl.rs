@@ -9,8 +9,8 @@ use std::marker::PhantomData;
 use windows_sys::Win32::Foundation::{ERROR_OUTOFMEMORY, FALSE};
 use windows_sys::Win32::Security::{
     ACCESS_ALLOWED_ACE, ACE_HEADER, ACL, ACL_REVISION, ACL_SIZE_INFORMATION, AclSizeInformation,
-    AddAccessAllowedAce, AddAccessDeniedAce, GetAce, GetAclInformation, InitializeAcl, IsValidAcl,
-    PSID,
+    AddAccessAllowedAce, AddAccessDeniedAce, DeleteAce, GetAce, GetAclInformation, InitializeAcl,
+    IsValidAcl, PSID,
 };
 use windows_sys::Win32::System::Memory::{LMEM_FIXED, LocalAlloc};
 use windows_sys::Win32::System::SystemServices::{
@@ -44,6 +44,11 @@ pub enum AceType {
     Unknown(u8),
 }
 
+#[derive(Debug)]
+pub struct AclBuilder {
+    acl: Acl,
+}
+
 impl Drop for Acl {
     fn drop(&mut self) {
         if self.owned {
@@ -58,15 +63,27 @@ impl Acl {
     }
 
     pub fn empty() -> Result<Self, WinError> {
-        unsafe {
-            let size = size_of::<ACL>() as u32;
-            let ptr = LocalAlloc(LMEM_FIXED, size as usize) as *mut ACL;
-            if ptr.is_null() {
-                return Err(ERROR_OUTOFMEMORY.into());
-            }
-            winapi_bool_call!(InitializeAcl(ptr, size, ACL_REVISION));
-            Ok(Self { ptr, owned: true })
+        // just an estimate, the size is dynamic, but if we want to add data, we need to allocate more
+        const DEFAULT_ACE_CAPACITY: usize = 8;
+        const DEFAULT_SID_MAX_LEN: usize = 128;
+
+        Self::with_capacity(DEFAULT_ACE_CAPACITY, DEFAULT_SID_MAX_LEN)
+    }
+
+    pub fn with_capacity(ace_count: usize, sid_max_len: usize) -> Result<Self, WinError> {
+        let estimated_size =
+            size_of::<ACL>() + ace_count * (size_of::<ACCESS_ALLOWED_ACE>() + sid_max_len);
+
+        let ptr = unsafe { LocalAlloc(LMEM_FIXED, estimated_size) as *mut ACL };
+        if ptr.is_null() {
+            return Err(ERROR_OUTOFMEMORY.into());
         }
+        unsafe {
+            winapi_bool_call!(InitializeAcl(ptr, estimated_size as u32, ACL_REVISION), {
+                assert_free!(ptr, "Acl::empty");
+            })
+        };
+        Ok(Self { ptr, owned: true })
     }
 
     /// # Safety
@@ -142,6 +159,60 @@ impl Acl {
             ))
         };
         Ok(())
+    }
+
+    /// Removes the ACE at the given index.
+    ///
+    /// # Safety
+    /// The index must be valid (0 <= index < ace_count()).
+    pub fn remove_ace(&mut self, index: u32) -> Result<(), WinError> {
+        unsafe {
+            winapi_bool_call!(DeleteAce(self.ptr, index));
+        }
+        Ok(())
+    }
+}
+
+impl AclBuilder {
+    pub fn new() -> Self {
+        Self {
+            acl: Acl::new().unwrap(),
+        }
+    }
+
+    pub fn new_with_capacity(ace_count: usize, sid_max_len: usize) -> Self {
+        Self {
+            acl: Acl::with_capacity(ace_count, sid_max_len).unwrap(),
+        }
+    }
+
+    /// # Safety
+    ///
+    /// todo
+    pub unsafe fn from_ptr(ptr: *mut ACL) -> Self {
+        Self {
+            acl: unsafe { Acl::from_ptr(ptr) },
+        }
+    }
+
+    pub fn allow(mut self, access_mask: u32, sid: &Sid) -> Self {
+        self.acl.add_allowed_ace(access_mask, sid).unwrap();
+        self
+    }
+
+    pub fn deny(mut self, access_mask: u32, sid: &Sid) -> Self {
+        self.acl.add_denied_ace(access_mask, sid).unwrap();
+        self
+    }
+
+    pub fn build(self) -> Acl {
+        self.acl
+    }
+}
+
+impl Default for AclBuilder {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
