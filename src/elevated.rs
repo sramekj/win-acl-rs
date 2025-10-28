@@ -15,8 +15,8 @@ use windows_sys::Win32::Foundation::{CloseHandle, ERROR_SUCCESS, GetLastError, H
 use windows_sys::Win32::Security::Authorization::{SE_FILE_OBJECT, SE_OBJECT_TYPE};
 use windows_sys::Win32::Security::{
     AdjustTokenPrivileges, GetTokenInformation, LookupPrivilegeValueW, OBJECT_SECURITY_INFORMATION,
-    SE_PRIVILEGE_ENABLED, SE_SECURITY_NAME, TOKEN_ADJUST_PRIVILEGES, TOKEN_ELEVATION,
-    TOKEN_PRIVILEGES, TOKEN_QUERY, TokenElevation,
+    SE_PRIVILEGE_ENABLED, SE_SECURITY_NAME, TOKEN_ADJUST_PRIVILEGES, TOKEN_ELEVATION, TOKEN_PRIVILEGES, TOKEN_QUERY,
+    TokenElevation,
 };
 use windows_sys::Win32::System::Threading::{GetCurrentProcess, OpenProcessToken};
 
@@ -38,12 +38,9 @@ fn enable_se_security_privilege() -> Result<(), WinError> {
             LowPart: 0,
             HighPart: 0,
         };
-        winapi_bool_call!(
-            LookupPrivilegeValueW(ptr::null(), SE_SECURITY_NAME, &mut luid),
-            {
-                CloseHandle(token);
-            }
-        );
+        winapi_bool_call!(LookupPrivilegeValueW(ptr::null(), SE_SECURITY_NAME, &mut luid), {
+            CloseHandle(token);
+        });
 
         let tp = TOKEN_PRIVILEGES {
             PrivilegeCount: 1,
@@ -75,11 +72,7 @@ pub fn is_admin() -> Result<bool, WinError> {
         let mut token_handle = null_mut();
         let mut token_elevation = TOKEN_ELEVATION { TokenIsElevated: 0 };
 
-        winapi_bool_call!(OpenProcessToken(
-            GetCurrentProcess(),
-            TOKEN_QUERY,
-            &mut token_handle
-        ));
+        winapi_bool_call!(OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &mut token_handle));
 
         let mut size = 0;
 
@@ -119,17 +112,13 @@ pub struct PrivilegeTokenImpl<P: PrivilegeLevel> {
 
 impl PrivilegeTokenImpl<Unprivileged> {
     pub fn new() -> Self {
-        Self {
-            _marker: PhantomData,
-        }
+        Self { _marker: PhantomData }
     }
 
     /// Try to elevate the current process.
     pub fn try_elevate(self) -> Result<PrivilegeTokenImpl<Elevated>, WinError> {
         enable_se_security_privilege()?;
-        Ok(PrivilegeTokenImpl {
-            _marker: PhantomData,
-        })
+        Ok(PrivilegeTokenImpl { _marker: PhantomData })
     }
 }
 

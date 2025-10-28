@@ -16,15 +16,13 @@ use std::slice::from_raw_parts;
 use std::str::FromStr;
 use windows_sys::Win32::Foundation::TRUE;
 use windows_sys::Win32::Security::Authorization::{
-    ConvertSecurityDescriptorToStringSecurityDescriptorW,
-    ConvertStringSecurityDescriptorToSecurityDescriptorW, GetNamedSecurityInfoW, SDDL_REVISION_1,
-    SE_FILE_OBJECT, SE_OBJECT_TYPE,
+    ConvertSecurityDescriptorToStringSecurityDescriptorW, ConvertStringSecurityDescriptorToSecurityDescriptorW,
+    GetNamedSecurityInfoW, SDDL_REVISION_1, SE_FILE_OBJECT, SE_OBJECT_TYPE,
 };
 use windows_sys::Win32::Security::{
-    ACL, DACL_SECURITY_INFORMATION, GROUP_SECURITY_INFORMATION, GetSecurityDescriptorDacl,
-    GetSecurityDescriptorGroup, GetSecurityDescriptorOwner, GetSecurityDescriptorSacl,
-    IsValidSecurityDescriptor, OBJECT_SECURITY_INFORMATION, OWNER_SECURITY_INFORMATION,
-    PSECURITY_DESCRIPTOR, PSID, SACL_SECURITY_INFORMATION,
+    ACL, DACL_SECURITY_INFORMATION, GROUP_SECURITY_INFORMATION, GetSecurityDescriptorDacl, GetSecurityDescriptorGroup,
+    GetSecurityDescriptorOwner, GetSecurityDescriptorSacl, IsValidSecurityDescriptor, OBJECT_SECURITY_INFORMATION,
+    OWNER_SECURITY_INFORMATION, PSECURITY_DESCRIPTOR, PSID, SACL_SECURITY_INFORMATION,
 };
 use windows_sys::core::{BOOL, PCWSTR};
 
@@ -45,10 +43,7 @@ impl SecurityDescriptorImpl<Unprivileged> {
     /// Upgrades security descriptor to elevated one that has access to SACL, for example
     ///
     /// Is guarded by the existence of elevated token
-    pub fn upgrade(
-        self,
-        _token: &PrivilegeTokenImpl<Elevated>,
-    ) -> SecurityDescriptorImpl<Elevated> {
+    pub fn upgrade(self, _token: &PrivilegeTokenImpl<Elevated>) -> SecurityDescriptorImpl<Elevated> {
         SecurityDescriptorImpl {
             sd_ptr: self.sd_ptr,
             owner_sid_ptr: self.owner_sid_ptr,

@@ -14,8 +14,7 @@ use std::str::FromStr;
 use windows_sys::Win32::Foundation::{ERROR_OUTOFMEMORY, FALSE, GetLastError};
 use windows_sys::Win32::Security::Authorization::{ConvertSidToStringSidW, ConvertStringSidToSidW};
 use windows_sys::Win32::Security::{
-    CopySid, CreateWellKnownSid, GetLengthSid, IsValidSid, PSID, SECURITY_MAX_SID_SIZE, SID,
-    WELL_KNOWN_SID_TYPE,
+    CopySid, CreateWellKnownSid, GetLengthSid, IsValidSid, PSID, SECURITY_MAX_SID_SIZE, SID, WELL_KNOWN_SID_TYPE,
 };
 use windows_sys::Win32::System::Memory::{LMEM_FIXED, LocalAlloc};
 
@@ -206,10 +205,7 @@ impl<'a> SidRef<'a> {
     ///
     /// TODO!
     pub unsafe fn from_ptr(ptr: *const SID) -> Self {
-        Self {
-            ptr,
-            _p: PhantomData,
-        }
+        Self { ptr, _p: PhantomData }
     }
 
     /// # Safety

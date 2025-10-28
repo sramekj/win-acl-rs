@@ -8,9 +8,8 @@ use std::fmt::{Debug, Formatter};
 use std::marker::PhantomData;
 use windows_sys::Win32::Foundation::{ERROR_OUTOFMEMORY, FALSE};
 use windows_sys::Win32::Security::{
-    ACCESS_ALLOWED_ACE, ACE_HEADER, ACL, ACL_REVISION, ACL_SIZE_INFORMATION, AclSizeInformation,
-    AddAccessAllowedAce, AddAccessDeniedAce, DeleteAce, GetAce, GetAclInformation, InitializeAcl,
-    IsValidAcl, PSID,
+    ACCESS_ALLOWED_ACE, ACE_HEADER, ACL, ACL_REVISION, ACL_SIZE_INFORMATION, AclSizeInformation, AddAccessAllowedAce,
+    AddAccessDeniedAce, DeleteAce, GetAce, GetAclInformation, InitializeAcl, IsValidAcl, PSID,
 };
 use windows_sys::Win32::System::Memory::{LMEM_FIXED, LocalAlloc};
 use windows_sys::Win32::System::SystemServices::{
@@ -36,7 +35,7 @@ pub struct AclIter<'a> {
     count: u32,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd, Hash)]
 pub enum AceType {
     AccessAllowed,
     AccessDenied,
@@ -71,8 +70,7 @@ impl Acl {
     }
 
     pub fn with_capacity(ace_count: usize, sid_max_len: usize) -> Result<Self, WinError> {
-        let estimated_size =
-            size_of::<ACL>() + ace_count * (size_of::<ACCESS_ALLOWED_ACE>() + sid_max_len);
+        let estimated_size = size_of::<ACL>() + ace_count * (size_of::<ACCESS_ALLOWED_ACE>() + sid_max_len);
 
         let ptr = unsafe { LocalAlloc(LMEM_FIXED, estimated_size) as *mut ACL };
         if ptr.is_null() {
@@ -261,11 +259,11 @@ impl<'a> Ace<'a> {
         }
     }
 
-    pub fn sid(&self) -> Option<Sid> {
+    pub fn sid(&self) -> Result<Sid, WinError> {
         unsafe {
             let header = &*(self.ptr as *const ACCESS_ALLOWED_ACE);
             let sid_ptr = &header.SidStart as *const _ as PSID;
-            Sid::from_ptr_clone(sid_ptr).ok()
+            Sid::from_ptr_clone(sid_ptr)
         }
     }
 
@@ -276,16 +274,18 @@ impl<'a> Ace<'a> {
 
 impl<'a> Debug for Ace<'a> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Ace")
-            .field(
-                "account_lookup",
-                &self.sid().unwrap().lookup_name().unwrap(),
-            )
-            .field(
-                "mask",
-                &format_args!("{:b}b, 0x{:X}", &self.mask(), &self.mask()),
-            )
-            .field("ace_type", &self.ace_type())
-            .finish()
+        if let Ok(account_lookup) = self.sid().unwrap().lookup_name() {
+            f.debug_struct("Ace")
+                .field("account_lookup", &account_lookup)
+                .field("mask", &format_args!("{:b}b, 0x{:X}", &self.mask(), &self.mask()))
+                .field("ace_type", &self.ace_type())
+                .finish()
+        } else {
+            f.debug_struct("Ace")
+                .field("account_lookup", &"<INVALID SID>")
+                .field("mask", &format_args!("{:b}b, 0x{:X}", &self.mask(), &self.mask()))
+                .field("ace_type", &self.ace_type())
+                .finish()
+        }
     }
 }

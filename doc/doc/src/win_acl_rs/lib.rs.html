@@ -18,9 +18,9 @@
 <a href=#18 id=18 data-nosnippet>18</a><span class="kw">mod </span>macros;
 <a href=#19 id=19 data-nosnippet>19</a>
 <a href=#20 id=20 data-nosnippet>20</a><span class="kw">pub use </span>windows_sys::Win32::Security::Authorization::{
-<a href=#21 id=21 data-nosnippet>21</a>    SE_DS_OBJECT, SE_DS_OBJECT_ALL, SE_FILE_OBJECT, SE_KERNEL_OBJECT, SE_LMSHARE, SE_OBJECT_TYPE,
-<a href=#22 id=22 data-nosnippet>22</a>    SE_PRINTER, SE_PROVIDER_DEFINED_OBJECT, SE_REGISTRY_KEY, SE_REGISTRY_WOW64_32KEY,
-<a href=#23 id=23 data-nosnippet>23</a>    SE_REGISTRY_WOW64_64KEY, SE_SERVICE, SE_UNKNOWN_OBJECT_TYPE, SE_WINDOW_OBJECT,
+<a href=#21 id=21 data-nosnippet>21</a>    SE_DS_OBJECT, SE_DS_OBJECT_ALL, SE_FILE_OBJECT, SE_KERNEL_OBJECT, SE_LMSHARE, SE_OBJECT_TYPE, SE_PRINTER,
+<a href=#22 id=22 data-nosnippet>22</a>    SE_PROVIDER_DEFINED_OBJECT, SE_REGISTRY_KEY, SE_REGISTRY_WOW64_32KEY, SE_REGISTRY_WOW64_64KEY, SE_SERVICE,
+<a href=#23 id=23 data-nosnippet>23</a>    SE_UNKNOWN_OBJECT_TYPE, SE_WINDOW_OBJECT,
 <a href=#24 id=24 data-nosnippet>24</a>};
 <a href=#25 id=25 data-nosnippet>25</a>
 <a href=#26 id=26 data-nosnippet>26</a><span class="doccomment">/// Contains error definitions
@@ -31,7 +31,7 @@
 <a href=#31 id=31 data-nosnippet>31</a>    <span class="doccomment">/// Result helper type
 <a href=#32 id=32 data-nosnippet>32</a>    </span><span class="kw">pub type </span><span class="prelude-ty">Result</span>&lt;T&gt; = std::result::Result&lt;T, WinError&gt;;
 <a href=#33 id=33 data-nosnippet>33</a>
-<a href=#34 id=34 data-nosnippet>34</a>    <span class="doccomment">/// WinError represents a WinAPI error, typically in hexadecimal format as an HRESULT
+<a href=#34 id=34 data-nosnippet>34</a>    <span class="doccomment">/// WinError represents a WinAPI error, typically in hexadecimal format as an HRESULT and an optional error message for cases, where HRESULT does not cut it (very rare)
 <a href=#35 id=35 data-nosnippet>35</a>    ///
 <a href=#36 id=36 data-nosnippet>36</a>    /// see: [MSDN](https://learn.microsoft.com/en-us/windows/win32/debug/system-error-codes--0-499-)
 <a href=#37 id=37 data-nosnippet>37</a>    ///

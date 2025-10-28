@@ -18,9 +18,9 @@ pub mod wellknown;
 mod macros;
 
 pub use windows_sys::Win32::Security::Authorization::{
-    SE_DS_OBJECT, SE_DS_OBJECT_ALL, SE_FILE_OBJECT, SE_KERNEL_OBJECT, SE_LMSHARE, SE_OBJECT_TYPE,
-    SE_PRINTER, SE_PROVIDER_DEFINED_OBJECT, SE_REGISTRY_KEY, SE_REGISTRY_WOW64_32KEY,
-    SE_REGISTRY_WOW64_64KEY, SE_SERVICE, SE_UNKNOWN_OBJECT_TYPE, SE_WINDOW_OBJECT,
+    SE_DS_OBJECT, SE_DS_OBJECT_ALL, SE_FILE_OBJECT, SE_KERNEL_OBJECT, SE_LMSHARE, SE_OBJECT_TYPE, SE_PRINTER,
+    SE_PROVIDER_DEFINED_OBJECT, SE_REGISTRY_KEY, SE_REGISTRY_WOW64_32KEY, SE_REGISTRY_WOW64_64KEY, SE_SERVICE,
+    SE_UNKNOWN_OBJECT_TYPE, SE_WINDOW_OBJECT,
 };
 
 /// Contains error definitions
@@ -31,7 +31,7 @@ pub mod error {
     /// Result helper type
     pub type Result<T> = std::result::Result<T, WinError>;
 
-    /// WinError represents a WinAPI error, typically in hexadecimal format as an HRESULT
+    /// WinError represents a WinAPI error, typically in hexadecimal format as an HRESULT and an optional error message for cases, where HRESULT does not cut it (very rare)
     ///
     /// see: [MSDN](https://learn.microsoft.com/en-us/windows/win32/debug/system-error-codes--0-499-)
     ///

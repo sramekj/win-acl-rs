@@ -19,11 +19,7 @@ impl WideCString {
     }
 
     pub fn from_wide_slice(slice: &[u16]) -> Self {
-        let inner = slice
-            .iter()
-            .cloned()
-            .take_while(|&n| n != 0)
-            .collect::<Vec<u16>>();
+        let inner = slice.iter().cloned().take_while(|&n| n != 0).collect::<Vec<u16>>();
         Self { inner }
     }
 
@@ -38,9 +34,7 @@ impl WideCString {
                 len += 1;
             }
             let slice = std::slice::from_raw_parts(ptr, len);
-            Self {
-                inner: slice.to_vec(),
-            }
+            Self { inner: slice.to_vec() }
         }
     }
 

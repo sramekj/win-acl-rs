@@ -83,10 +83,7 @@ impl Debug for Trustee<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Trustee")
             .field("pMultipleTrustee", &self.inner.pMultipleTrustee)
-            .field(
-                "MultipleTrusteeOperation",
-                &self.inner.MultipleTrusteeOperation,
-            )
+            .field("MultipleTrusteeOperation", &self.inner.MultipleTrusteeOperation)
             .field("TrusteeForm", &self.inner.TrusteeForm)
             .field("TrusteeType", &self.inner.TrusteeType)
             .field("ptstrName", &self.inner.ptstrName)
