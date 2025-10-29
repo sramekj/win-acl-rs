@@ -43,11 +43,6 @@ pub enum AceType {
     Unknown(u8),
 }
 
-#[derive(Debug)]
-pub struct AclBuilder {
-    acl: Acl,
-}
-
 impl Drop for Acl {
     fn drop(&mut self) {
         if self.owned {
@@ -108,33 +103,6 @@ impl Acl {
         }
     }
 
-    pub fn iter(&self) -> Option<AclIter<'_>> {
-        let mut info = ACL_SIZE_INFORMATION {
-            AceCount: 0,
-            AclBytesInUse: 0,
-            AclBytesFree: 0,
-        };
-
-        let err = unsafe {
-            GetAclInformation(
-                self.ptr,
-                &mut info as *mut _ as *mut _,
-                size_of::<ACL_SIZE_INFORMATION>() as u32,
-                AclSizeInformation,
-            )
-        };
-
-        if err == FALSE {
-            return None;
-        }
-
-        Some(AclIter {
-            acl: self,
-            index: 0,
-            count: info.AceCount,
-        })
-    }
-
     pub fn add_allowed_ace(&mut self, access_mask: u32, sid: &Sid) -> Result<(), WinError> {
         unsafe {
             winapi_bool_call!(AddAccessAllowedAce(
@@ -171,49 +139,6 @@ impl Acl {
     }
 }
 
-impl AclBuilder {
-    pub fn new() -> Self {
-        Self {
-            acl: Acl::new().unwrap(),
-        }
-    }
-
-    pub fn new_with_capacity(ace_count: usize, sid_max_len: usize) -> Self {
-        Self {
-            acl: Acl::with_capacity(ace_count, sid_max_len).unwrap(),
-        }
-    }
-
-    /// # Safety
-    ///
-    /// todo
-    pub unsafe fn from_ptr(ptr: *mut ACL) -> Self {
-        Self {
-            acl: unsafe { Acl::from_ptr(ptr) },
-        }
-    }
-
-    pub fn allow(mut self, access_mask: u32, sid: &Sid) -> Self {
-        self.acl.add_allowed_ace(access_mask, sid).unwrap();
-        self
-    }
-
-    pub fn deny(mut self, access_mask: u32, sid: &Sid) -> Self {
-        self.acl.add_denied_ace(access_mask, sid).unwrap();
-        self
-    }
-
-    pub fn build(self) -> Acl {
-        self.acl
-    }
-}
-
-impl Default for AclBuilder {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl<'a> Iterator for AclIter<'a> {
     type Item = Ace<'a>;
 
@@ -242,7 +167,35 @@ impl<'a> IntoIterator for &'a Acl {
     type IntoIter = AclIter<'a>;
 
     fn into_iter(self) -> Self::IntoIter {
-        self.iter().unwrap()
+        let mut info = ACL_SIZE_INFORMATION {
+            AceCount: 0,
+            AclBytesInUse: 0,
+            AclBytesFree: 0,
+        };
+
+        let err = unsafe {
+            GetAclInformation(
+                self.ptr,
+                &mut info as *mut _ as *mut _,
+                size_of::<ACL_SIZE_INFORMATION>() as u32,
+                AclSizeInformation,
+            )
+        };
+
+        if err == FALSE {
+            // TODO: this could be handled better... :/
+            return AclIter {
+                acl: self,
+                index: 0,
+                count: 0,
+            };
+        }
+
+        AclIter {
+            acl: self,
+            index: 0,
+            count: info.AceCount,
+        }
     }
 }
 
@@ -274,18 +227,15 @@ impl<'a> Ace<'a> {
 
 impl<'a> Debug for Ace<'a> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        if let Ok(account_lookup) = self.sid().unwrap().lookup_name() {
-            f.debug_struct("Ace")
-                .field("account_lookup", &account_lookup)
-                .field("mask", &format_args!("{:b}b, 0x{:X}", &self.mask(), &self.mask()))
-                .field("ace_type", &self.ace_type())
-                .finish()
-        } else {
-            f.debug_struct("Ace")
-                .field("account_lookup", &"<INVALID SID>")
-                .field("mask", &format_args!("{:b}b, 0x{:X}", &self.mask(), &self.mask()))
-                .field("ace_type", &self.ace_type())
-                .finish()
-        }
+        let account_lookup = match self.sid().map(|sid| sid.lookup_name()) {
+            Ok(Ok(lookup)) => format!("{}/{}", lookup.domain, lookup.name),
+            _ => "<INVALID SID>".to_owned(),
+        };
+
+        f.debug_struct("Ace")
+            .field("account_lookup", &account_lookup)
+            .field("mask", &format_args!("{:b}b, 0x{:X}", &self.mask(), &self.mask()))
+            .field("ace_type", &self.ace_type())
+            .finish()
     }
 }

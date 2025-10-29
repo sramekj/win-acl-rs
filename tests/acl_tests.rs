@@ -1,8 +1,8 @@
 #![cfg(windows)]
 
 use std::str::FromStr;
-use win_acl_rs::acl::{Acl, AclBuilder};
-use win_acl_rs::mask::{FileAccess, PrinterAccess};
+use win_acl_rs::acl::Acl;
+use win_acl_rs::mask::FileAccess;
 use win_acl_rs::sd::SecurityDescriptor;
 use win_acl_rs::sid::Sid;
 
@@ -70,24 +70,4 @@ fn test_add_remove_ace() {
 
     assert!(acl.is_valid());
     assert_eq!(acl.ace_count(), 1);
-}
-
-#[test]
-#[ignore] // would fail on CI
-fn acl_builder_test() {
-    let sid = Sid::from_account_name("System").unwrap();
-    let builder = AclBuilder::default();
-
-    let acl = builder
-        .allow(PrinterAccess::READ.bits(), &sid)
-        .allow(PrinterAccess::WRITE.bits(), &sid)
-        .deny(PrinterAccess::ADMIN.bits(), &sid)
-        .build();
-
-    assert!(acl.is_valid());
-    assert_eq!(acl.ace_count(), 3);
-
-    for ace in &acl {
-        println!("{:?}", ace);
-    }
 }
