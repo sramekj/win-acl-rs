@@ -17,7 +17,6 @@ use windows_sys::Win32::System::SystemServices::{
 };
 
 /// TODO
-#[derive(Debug)]
 pub struct Acl {
     ptr: *mut ACL,
     owned: bool,
@@ -48,6 +47,16 @@ impl Drop for Acl {
         if self.owned {
             unsafe { assert_free!(self.ptr, "Acl::drop") }
         }
+    }
+}
+
+impl Debug for Acl {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let mut fmt = f.debug_struct("Acl");
+        for ace in self {
+            fmt.field("ace", &ace);
+        }
+        fmt.finish()
     }
 }
 

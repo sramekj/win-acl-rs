@@ -66,6 +66,8 @@ fn test_add_remove_ace() {
     assert!(acl.is_valid());
     assert_eq!(acl.ace_count(), 2);
 
+    println!("{:?}", acl);
+
     acl.remove_ace(1).unwrap();
 
     assert!(acl.is_valid());
