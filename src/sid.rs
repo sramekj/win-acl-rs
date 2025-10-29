@@ -187,9 +187,13 @@ impl Sid {
     }
 }
 
-impl AsRef<PSID> for Sid {
-    fn as_ref(&self) -> &PSID {
-        &self.psid
+impl<T> AsRef<T> for Sid
+where
+    T: ?Sized,
+    <Sid as Deref>::Target: AsRef<T>,
+{
+    fn as_ref(&self) -> &T {
+        self.deref().as_ref()
     }
 }
 
