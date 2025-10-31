@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":["account"],"struct":["Sid","SidRef"]};
+window.SIDEBAR_ITEMS = {"mod":["account"],"struct":["Sid","SidRef"],"trait":["AsSidRef"]};

@@ -5,39 +5,33 @@ use crate::sid::account::{AccountLookup, lookup_account_name, lookup_account_sid
 use crate::trustee::Trustee;
 use crate::utils::WideCString;
 use crate::{assert_free, winapi_bool_call};
-use std::fmt::{Display, Formatter};
-use std::hash::{Hash, Hasher};
+use std::fmt::{Debug, Display, Formatter};
+use std::hash::Hash;
 use std::marker::PhantomData;
-use std::ops::Deref;
-use std::ptr::{copy_nonoverlapping, null_mut};
+use std::ptr::null_mut;
 use std::str::FromStr;
 use windows_sys::Win32::Foundation::{ERROR_OUTOFMEMORY, FALSE, GetLastError};
 use windows_sys::Win32::Security::Authorization::{ConvertSidToStringSidW, ConvertStringSidToSidW};
 use windows_sys::Win32::Security::{
-    CopySid, CreateWellKnownSid, GetLengthSid, IsValidSid, PSID, SECURITY_MAX_SID_SIZE, SID, WELL_KNOWN_SID_TYPE,
+    CreateWellKnownSid, GetLengthSid, IsValidSid, PSID, SECURITY_MAX_SID_SIZE, SID, WELL_KNOWN_SID_TYPE,
 };
 use windows_sys::Win32::System::Memory::{LMEM_FIXED, LocalAlloc};
 
-/// Owned SID structure, opaque
-#[derive(Debug)]
+pub trait AsSidRef<'a> {
+    fn as_sid_ref(&'a self) -> SidRef<'a>;
+}
+
+/// Owned SID
+#[derive(Clone, Eq, PartialEq, Hash)]
 pub struct Sid {
-    psid: PSID,
-    len: usize,
+    data: Vec<u8>,
 }
 
 /// Borrowed SID
-#[derive(Debug)]
+#[derive(Clone, Copy)]
 pub struct SidRef<'a> {
     ptr: *const SID,
     _p: PhantomData<&'a SID>,
-}
-
-impl Drop for Sid {
-    fn drop(&mut self) {
-        unsafe {
-            assert_free!(self.psid, "Sid::drop");
-        }
-    }
 }
 
 impl FromStr for Sid {
@@ -55,26 +49,6 @@ impl Display for Sid {
     }
 }
 
-impl Clone for Sid {
-    fn clone(&self) -> Self {
-        Sid::from_bytes(&self.to_vec()).unwrap()
-    }
-}
-
-impl PartialEq<Self> for Sid {
-    fn eq(&self, other: &Self) -> bool {
-        self.to_vec() == other.to_vec()
-    }
-}
-
-impl Eq for Sid {}
-
-impl Hash for Sid {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.to_vec().hash(state);
-    }
-}
-
 impl TryFrom<&[u8]> for Sid {
     type Error = WinError;
     fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
@@ -89,36 +63,8 @@ impl From<Sid> for Vec<u8> {
 }
 
 impl Sid {
-    /// # Safety
-    ///
-    /// TODO!
-    pub unsafe fn from_ptr_clone(psid: PSID) -> Result<Self, WinError> {
-        unsafe {
-            if psid.is_null() || IsValidSid(psid) == FALSE {
-                return Err("Either psid is null or is not valid".into());
-            }
-            let len = GetLengthSid(psid) as usize;
-            let dst = LocalAlloc(LMEM_FIXED, len) as PSID;
-            if dst.is_null() {
-                return Err(ERROR_OUTOFMEMORY.into());
-            }
-            winapi_bool_call!(CopySid(len as u32, dst, psid), {
-                assert_free!(dst, "Sid::from_ptr_clone");
-            });
-            Ok(Self { psid: dst, len })
-        }
-    }
-
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, WinError> {
-        unsafe {
-            let len = bytes.len();
-            let dst = LocalAlloc(LMEM_FIXED, len) as PSID;
-            if dst.is_null() {
-                return Err(ERROR_OUTOFMEMORY.into());
-            }
-            copy_nonoverlapping(bytes.as_ptr(), dst as _, len);
-            Ok(Self { psid: dst, len })
-        }
+        Ok(Self { data: bytes.to_vec() })
     }
 
     pub fn from_string<S>(s: S) -> Result<Self, WinError>
@@ -127,25 +73,33 @@ impl Sid {
     {
         let wide = WideCString::new(s.as_ref());
         let mut sid_ptr: PSID = null_mut();
-        let ok = unsafe { ConvertStringSidToSidW(wide.as_ptr(), &mut sid_ptr) };
-        if ok == FALSE || sid_ptr.is_null() {
+        let err = unsafe { ConvertStringSidToSidW(wide.as_ptr(), &mut sid_ptr) };
+        if err == FALSE || sid_ptr.is_null() {
             return Err(unsafe { GetLastError().into() });
         }
         let len = unsafe { GetLengthSid(sid_ptr) as usize };
-        Ok(Sid { psid: sid_ptr, len })
+        let data = unsafe { std::slice::from_raw_parts(sid_ptr as *const u8, len) }.to_vec();
+
+        unsafe { assert_free!(sid_ptr, "Sid::from_string") };
+
+        Ok(Sid { data })
     }
 
     pub fn from_well_known_sid(kind: WELL_KNOWN_SID_TYPE) -> Result<Self, WinError> {
+        Self::from_well_known_sid_and_domain(kind, None)
+    }
+
+    pub fn from_well_known_sid_and_domain(
+        kind: WELL_KNOWN_SID_TYPE,
+        domain_sid_ptr: Option<SidRef>,
+    ) -> Result<Self, WinError> {
         let mut buf = vec![0u8; SECURITY_MAX_SID_SIZE as usize];
         let mut size = buf.len() as u32;
-        unsafe {
-            winapi_bool_call!(CreateWellKnownSid(
-                kind,
-                null_mut() as PSID,
-                buf.as_mut_ptr() as PSID,
-                &mut size
-            ))
+        let domain = match domain_sid_ptr {
+            None => null_mut() as PSID,
+            Some(sid_ref) => sid_ref.ptr as PSID,
         };
+        unsafe { winapi_bool_call!(CreateWellKnownSid(kind, domain, buf.as_mut_ptr() as PSID, &mut size)) };
         Self::from_bytes(&buf[..size as usize])
     }
 
@@ -157,50 +111,66 @@ impl Sid {
     }
 
     pub fn lookup_name(&self) -> Result<AccountLookup, WinError> {
-        unsafe { lookup_account_sid(self.psid) }
+        unsafe { lookup_account_sid(self.data.as_ptr() as PSID) }
     }
 
     pub fn is_valid(&self) -> bool {
-        unsafe { IsValidSid(self.psid) != FALSE }
+        unsafe { IsValidSid(self.data.as_ptr() as PSID) != FALSE }
+    }
+
+    pub fn len(&self) -> usize {
+        unsafe { GetLengthSid(self.data.as_ptr() as PSID) as usize }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
     }
 
     pub fn to_string(&self) -> Result<String, WinError> {
         let mut str_ptr: *mut u16 = null_mut();
-        unsafe { winapi_bool_call!(ConvertSidToStringSidW(self.psid, &mut str_ptr)) }
-        let s = WideCString::from_wide_null_ptr(str_ptr).as_string();
+        unsafe { winapi_bool_call!(ConvertSidToStringSidW(self.data.as_ptr() as PSID, &mut str_ptr)) }
+        let result = WideCString::from_wide_null_ptr(str_ptr).as_string();
         unsafe { assert_free!(str_ptr, "Sid::to_string") };
-        Ok(s)
+        Ok(result)
     }
 
     pub fn as_trustee(&'_ self) -> Trustee<'_> {
-        Trustee::from_sid(self)
-    }
-
-    pub fn as_ptr(&self) -> *const SID {
-        self.psid as *const _
+        Trustee::from_sid_ref(self.as_sid_ref())
     }
 
     pub fn to_vec(&self) -> Vec<u8> {
-        let mut v = vec![0u8; self.len];
-        unsafe { CopySid(self.len as u32, v.as_mut_ptr() as *mut _, self.psid) };
-        v
+        self.data.clone()
     }
 }
 
-impl<T> AsRef<T> for Sid
-where
-    T: ?Sized,
-    <Sid as Deref>::Target: AsRef<T>,
-{
-    fn as_ref(&self) -> &T {
-        self.deref().as_ref()
+impl<'a> AsSidRef<'a> for Sid {
+    fn as_sid_ref(&self) -> SidRef<'a> {
+        unsafe { SidRef::from_ptr(self.data.as_ptr() as _) }
     }
 }
 
-impl Deref for Sid {
-    type Target = PSID;
-    fn deref(&self) -> &Self::Target {
-        &self.psid
+impl Debug for Sid {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let account = match &self.lookup_name() {
+            Ok(acc) => format!("{}/{}", acc.domain, acc.name),
+            Err(_) => "<ACCOUNT LOOKUP ERROR>".to_string(),
+        };
+        f.debug_struct("Sid")
+            .field(
+                "as_string",
+                &self.to_string().unwrap_or_else(|_| "<INVALID SID>".to_string()),
+            )
+            .field("is_valid", &self.is_valid())
+            .field("data", &self.data)
+            .field("len", &self.len())
+            .field("account", &account)
+            .finish()
+    }
+}
+
+impl<'a, T: AsSidRef<'a> + ?Sized> AsSidRef<'a> for &T {
+    fn as_sid_ref(&'a self) -> SidRef<'a> {
+        (*self).as_sid_ref()
     }
 }
 
@@ -210,6 +180,13 @@ impl<'a> SidRef<'a> {
     /// TODO!
     pub unsafe fn from_ptr(ptr: *const SID) -> Self {
         Self { ptr, _p: PhantomData }
+    }
+
+    /// # Safety
+    ///
+    /// TODO!
+    pub unsafe fn lookup_name(&self) -> Result<AccountLookup, WinError> {
+        unsafe { lookup_account_sid(self.ptr as PSID) }
     }
 
     /// # Safety
@@ -236,11 +213,59 @@ impl<'a> SidRef<'a> {
     pub fn to_string(&self) -> Result<String, WinError> {
         let mut str_ptr: *mut u16 = null_mut();
         unsafe { winapi_bool_call!(ConvertSidToStringSidW(self.ptr as PSID, &mut str_ptr)) }
-        let s = WideCString::from_wide_null_ptr(str_ptr).as_string();
+        let result = WideCString::from_wide_null_ptr(str_ptr).as_string();
         unsafe {
             assert_free!(str_ptr, "SidRef<'a>::to_string");
         }
-        Ok(s)
+        Ok(result)
+    }
+
+    pub fn as_trustee(&'_ self) -> Trustee<'_> {
+        let sid_ref = self.as_sid_ref();
+        Trustee::from_sid_ref(sid_ref)
+    }
+
+    pub fn to_vec(&self) -> Vec<u8> {
+        unsafe { std::slice::from_raw_parts(self.ptr as *const u8, self.len()) }.to_vec()
+    }
+
+    pub fn as_ptr(&self) -> *const SID {
+        self.ptr
+    }
+}
+
+impl<'a> AsSidRef<'a> for SidRef<'a> {
+    fn as_sid_ref(&'a self) -> SidRef<'a> {
+        *self
+    }
+}
+
+impl<'a> Display for SidRef<'a> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let str = self.to_string().unwrap_or_else(|_| "<invalid sid>".into());
+        f.write_str(&str)
+    }
+}
+
+impl<'a> Debug for SidRef<'a> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let lookup = unsafe { &self.lookup_name() };
+        let is_valid = unsafe { &self.is_valid() };
+        let len = unsafe { &self.len() };
+        let account = match lookup {
+            Ok(acc) => format!("{}/{}", acc.domain, acc.name),
+            Err(_) => "<ACCOUNT LOOKUP ERROR>".to_string(),
+        };
+        f.debug_struct("SidRef<'a>")
+            .field(
+                "as_string",
+                &self.to_string().unwrap_or_else(|_| "<INVALID SID>".to_string()),
+            )
+            .field("is_valid", is_valid)
+            .field("ptr", &self.ptr)
+            .field("len", len)
+            .field("account", &account)
+            .finish()
     }
 }
 
@@ -310,17 +335,15 @@ pub mod account {
         };
 
         let domain = String::from_utf16_lossy(&domain_buf[..domain_size as usize]);
-        let sid_obj = unsafe { Sid::from_ptr_clone(sid) }?;
+
+        let sid_ref = unsafe { SidRef::from_ptr(sid as *const SID) };
+        let name = sid_ref.to_string()?;
 
         unsafe {
             assert_free!(sid, "account::lookup_account_name()");
         };
 
-        Ok(AccountLookup {
-            name: sid_obj.to_string()?,
-            domain,
-            sid_type,
-        })
+        Ok(AccountLookup { name, domain, sid_type })
     }
 
     /// # Safety

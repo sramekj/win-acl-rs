@@ -4,7 +4,7 @@ use std::str::FromStr;
 use win_acl_rs::acl::Acl;
 use win_acl_rs::mask::FileAccess;
 use win_acl_rs::sd::SecurityDescriptor;
-use win_acl_rs::sid::Sid;
+use win_acl_rs::sid::{AsSidRef, Sid};
 
 fn create_sd() -> SecurityDescriptor {
     const TEST_SD_STRING: &str = "O:S-1-5-21-1402048822-409899687-2319524958-1001G:S-1-5-21-1402048822-409899687-2319524958-1001D:(A;ID;FA;;;SY)(A;ID;FA;;;BA)(A;ID;FA;;;S-1-5-21-1402048822-409899687-2319524958-1001)";
@@ -55,13 +55,13 @@ fn test_add_remove_ace() {
 
     let mask = FileAccess::READ | FileAccess::WRITE;
 
-    acl.add_allowed_ace(mask.bits(), &sid).unwrap();
+    acl.add_allowed_ace(mask.bits(), sid.as_sid_ref()).unwrap();
 
     assert!(acl.is_valid());
     assert_eq!(acl.ace_count(), 1);
 
     let mask = FileAccess::EXECUTE;
-    acl.add_denied_ace(mask.bits(), &sid).unwrap();
+    acl.add_denied_ace(mask.bits(), sid.as_sid_ref()).unwrap();
 
     assert!(acl.is_valid());
     assert_eq!(acl.ace_count(), 2);

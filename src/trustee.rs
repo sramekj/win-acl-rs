@@ -1,7 +1,7 @@
 //! TODO
 
 use crate::error::WinError;
-use crate::sid::Sid;
+use crate::sid::{AsSidRef, SidRef};
 use crate::utils::WideCString;
 use std::fmt::{Debug, Formatter};
 use std::marker::PhantomData;
@@ -11,23 +11,23 @@ pub use windows_sys::Win32::Security::Authorization::TRUSTEE_TYPE;
 use windows_sys::Win32::Security::Authorization::{
     NO_MULTIPLE_TRUSTEE, TRUSTEE_IS_NAME, TRUSTEE_IS_SID, TRUSTEE_IS_UNKNOWN, TRUSTEE_W,
 };
-use windows_sys::Win32::Security::SID;
 
 /// TODO
 pub struct Trustee<'a> {
     inner: TRUSTEE_W,
     _inner_wide_name: Option<WideCString>,
-    _phantom: PhantomData<&'a SID>,
+    _phantom: PhantomData<SidRef<'a>>,
 }
 
 impl<'a> Trustee<'a> {
-    pub fn from_sid(sid: &'a Sid) -> Self {
+    pub fn from_sid_ref(sid_ref: SidRef<'a>) -> Self {
+        let sid_ref = sid_ref.as_sid_ref();
         let trustee = TRUSTEE_W {
             pMultipleTrustee: null_mut(),
             MultipleTrusteeOperation: NO_MULTIPLE_TRUSTEE,
             TrusteeForm: TRUSTEE_IS_SID,
             TrusteeType: TRUSTEE_IS_UNKNOWN,
-            ptstrName: sid.as_ptr() as *mut _,
+            ptstrName: sid_ref.as_ptr() as *mut _,
         };
         Self {
             inner: trustee,
@@ -62,12 +62,6 @@ impl<'a> Trustee<'a> {
 
     pub fn get_name(&self) -> Option<String> {
         self._inner_wide_name.as_ref().map(|s| s.as_string())
-    }
-}
-
-impl<'a> From<&'a Sid> for Trustee<'a> {
-    fn from(sid: &'a Sid) -> Self {
-        sid.as_trustee()
     }
 }
 

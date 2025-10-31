@@ -15,7 +15,7 @@ fn test_owner_sid_obtained_from_sd() {
 
     let owner_sid = sd.owner_sid().unwrap();
 
-    assert!(owner_sid.is_valid());
+    unsafe { assert!(owner_sid.is_valid()) };
 
     println!("{}", owner_sid);
 
@@ -32,7 +32,7 @@ fn test_group_sid_obtained_from_sd() {
 
     let group_sid = sd.group_sid().unwrap();
 
-    assert!(group_sid.is_valid());
+    unsafe { assert!(group_sid.is_valid()) };
 
     assert!(group_sid.to_string().is_ok_and(|s| !s.is_empty()));
 }

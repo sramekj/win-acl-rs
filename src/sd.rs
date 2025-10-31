@@ -5,7 +5,7 @@
 use crate::acl::Acl;
 use crate::elevated::{Elevated, PrivilegeLevel, PrivilegeTokenImpl, Unprivileged};
 use crate::error::WinError;
-use crate::sid::Sid;
+use crate::sid::SidRef;
 use crate::utils::WideCString;
 use crate::{assert_free, winapi_bool_call, winapi_call};
 use std::ffi::OsStr;
@@ -337,18 +337,18 @@ impl<P: PrivilegeLevel> SecurityDescriptorImpl<P> {
         Ok(string.as_string())
     }
 
-    pub fn owner_sid(&self) -> Option<Sid> {
+    pub fn owner_sid(&self) -> Option<SidRef<'_>> {
         if self.owner_sid_ptr.is_null() {
             return None;
         }
-        unsafe { Sid::from_ptr_clone(self.owner_sid_ptr) }.ok()
+        Some(unsafe { SidRef::from_ptr(self.owner_sid_ptr as _) })
     }
 
-    pub fn group_sid(&self) -> Option<Sid> {
+    pub fn group_sid(&self) -> Option<SidRef<'_>> {
         if self.group_sid_ptr.is_null() {
             return None;
         }
-        unsafe { Sid::from_ptr_clone(self.group_sid_ptr) }.ok()
+        Some(unsafe { SidRef::from_ptr(self.group_sid_ptr as _) })
     }
 
     pub fn dacl(&self) -> Option<Acl> {

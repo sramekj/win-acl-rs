@@ -1,7 +1,7 @@
 //! TODO
 
 use crate::error::WinError;
-use crate::sid::Sid;
+use crate::sid::{Sid, SidRef};
 use crate::{assert_free, winapi_bool_call};
 use std::ffi::c_void;
 use std::fmt::{Debug, Formatter};
@@ -9,7 +9,7 @@ use std::marker::PhantomData;
 use windows_sys::Win32::Foundation::{ERROR_OUTOFMEMORY, FALSE};
 use windows_sys::Win32::Security::{
     ACCESS_ALLOWED_ACE, ACE_HEADER, ACL, ACL_REVISION, ACL_SIZE_INFORMATION, AclSizeInformation, AddAccessAllowedAce,
-    AddAccessDeniedAce, DeleteAce, GetAce, GetAclInformation, InitializeAcl, IsValidAcl, PSID,
+    AddAccessDeniedAce, DeleteAce, GetAce, GetAclInformation, GetLengthSid, InitializeAcl, IsValidAcl, PSID,
 };
 use windows_sys::Win32::System::Memory::{LMEM_FIXED, LocalAlloc};
 use windows_sys::Win32::System::SystemServices::{
@@ -112,25 +112,25 @@ impl Acl {
         }
     }
 
-    pub fn add_allowed_ace(&mut self, access_mask: u32, sid: &Sid) -> Result<(), WinError> {
+    pub fn add_allowed_ace(&mut self, access_mask: u32, sid: SidRef<'_>) -> Result<(), WinError> {
         unsafe {
             winapi_bool_call!(AddAccessAllowedAce(
                 self.ptr,
                 ACL_REVISION,
                 access_mask,
-                sid.as_ptr() as PSID
+                sid.as_ptr() as _,
             ))
         };
         Ok(())
     }
 
-    pub fn add_denied_ace(&mut self, access_mask: u32, sid: &Sid) -> Result<(), WinError> {
+    pub fn add_denied_ace(&mut self, access_mask: u32, sid: SidRef<'_>) -> Result<(), WinError> {
         unsafe {
             winapi_bool_call!(AddAccessDeniedAce(
                 self.ptr,
                 ACL_REVISION,
                 access_mask,
-                sid.as_ptr() as PSID
+                sid.as_ptr() as _
             ))
         };
         Ok(())
@@ -192,7 +192,7 @@ impl<'a> IntoIterator for &'a Acl {
         };
 
         if err == FALSE {
-            // TODO: this could be handled better... :/
+            // TODO: this could perhaps be handled better... :/
             return AclIter {
                 acl: self,
                 index: 0,
@@ -225,7 +225,9 @@ impl<'a> Ace<'a> {
         unsafe {
             let header = &*(self.ptr as *const ACCESS_ALLOWED_ACE);
             let sid_ptr = &header.SidStart as *const _ as PSID;
-            Sid::from_ptr_clone(sid_ptr)
+            let len = GetLengthSid(sid_ptr) as usize;
+            let data = std::slice::from_raw_parts(sid_ptr as *const u8, len).to_vec();
+            Sid::from_bytes(&data)
         }
     }
 
