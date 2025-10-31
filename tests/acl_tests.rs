@@ -58,13 +58,16 @@ fn test_add_remove_ace() {
 
     let mask = FileAccess::READ | FileAccess::WRITE;
 
-    acl.add_allowed_ace(mask.bits(), sid.as_sid_ref()).unwrap();
+    // Try direct sid reference
+    acl.add_allowed_ace(mask.bits(), &sid).unwrap();
 
     assert!(acl.is_valid());
     assert_eq!(acl.ace_count(), 1);
 
     let mask = FileAccess::EXECUTE;
-    acl.add_denied_ace(mask.bits(), sid.as_sid_ref()).unwrap();
+    let sid_ref = sid.as_sid_ref();
+    // Try sid_ref
+    acl.add_denied_ace(mask.bits(), &sid_ref).unwrap();
 
     assert!(acl.is_valid());
     assert_eq!(acl.ace_count(), 2);

@@ -22,7 +22,7 @@ use windows_sys::Win32::{
 use crate::{
     assert_free,
     error::WinError,
-    sid::{Sid, SidRef},
+    sid::{AsSidRef, Sid},
     winapi_bool_call,
 };
 
@@ -122,25 +122,31 @@ impl Acl {
         }
     }
 
-    pub fn add_allowed_ace(&mut self, access_mask: u32, sid: SidRef<'_>) -> Result<(), WinError> {
+    pub fn add_allowed_ace<'a, S>(&mut self, access_mask: u32, sid_ref: &'a S) -> Result<(), WinError>
+    where
+        S: AsSidRef<'a>,
+    {
         unsafe {
             winapi_bool_call!(AddAccessAllowedAce(
                 self.ptr,
                 ACL_REVISION,
                 access_mask,
-                sid.as_ptr() as _,
+                sid_ref.as_sid_ref().as_ptr() as _,
             ))
         };
         Ok(())
     }
 
-    pub fn add_denied_ace(&mut self, access_mask: u32, sid: SidRef<'_>) -> Result<(), WinError> {
+    pub fn add_denied_ace<'a, S>(&mut self, access_mask: u32, sid_ref: &'a S) -> Result<(), WinError>
+    where
+        S: AsSidRef<'a>,
+    {
         unsafe {
             winapi_bool_call!(AddAccessDeniedAce(
                 self.ptr,
                 ACL_REVISION,
                 access_mask,
-                sid.as_ptr() as _
+                sid_ref.as_sid_ref().as_ptr() as _
             ))
         };
         Ok(())
