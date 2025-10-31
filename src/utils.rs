@@ -1,5 +1,7 @@
-use std::ffi::{OsStr, OsString};
-use std::os::windows::ffi::{OsStrExt, OsStringExt};
+use std::{
+    ffi::{OsStr, OsString},
+    os::windows::ffi::{OsStrExt, OsStringExt},
+};
 
 pub struct WideCString {
     inner: Vec<u16>,

@@ -1,21 +1,30 @@
 //! TODO
 
-use crate::error::WinError;
-use crate::sid::account::{AccountLookup, lookup_account_name, lookup_account_sid};
-use crate::trustee::Trustee;
-use crate::utils::WideCString;
-use crate::{assert_free, winapi_bool_call};
-use std::fmt::{Debug, Display, Formatter};
-use std::hash::Hash;
-use std::marker::PhantomData;
-use std::ptr::null_mut;
-use std::str::FromStr;
-use windows_sys::Win32::Foundation::{ERROR_OUTOFMEMORY, FALSE, GetLastError};
-use windows_sys::Win32::Security::Authorization::{ConvertSidToStringSidW, ConvertStringSidToSidW};
-use windows_sys::Win32::Security::{
-    CreateWellKnownSid, GetLengthSid, IsValidSid, PSID, SECURITY_MAX_SID_SIZE, SID, WELL_KNOWN_SID_TYPE,
+use std::{
+    fmt::{Debug, Display, Formatter},
+    hash::Hash,
+    marker::PhantomData,
+    ptr::null_mut,
+    str::FromStr,
 };
-use windows_sys::Win32::System::Memory::{LMEM_FIXED, LocalAlloc};
+
+use windows_sys::Win32::{
+    Foundation::{ERROR_OUTOFMEMORY, FALSE, GetLastError},
+    Security::{
+        Authorization::{ConvertSidToStringSidW, ConvertStringSidToSidW},
+        CreateWellKnownSid, GetLengthSid, IsValidSid, PSID, SECURITY_MAX_SID_SIZE, SID, WELL_KNOWN_SID_TYPE,
+    },
+    System::Memory::{LMEM_FIXED, LocalAlloc},
+};
+
+use crate::{
+    assert_free,
+    error::WinError,
+    sid::account::{AccountLookup, lookup_account_name, lookup_account_sid},
+    trustee::Trustee,
+    utils::WideCString,
+    winapi_bool_call,
+};
 
 pub trait AsSidRef<'a> {
     fn as_sid_ref(&'a self) -> SidRef<'a>;
@@ -270,8 +279,9 @@ impl<'a> Debug for SidRef<'a> {
 }
 
 pub mod account {
-    use super::*;
     use windows_sys::Win32::Security::{LookupAccountNameW, LookupAccountSidW, SID_NAME_USE};
+
+    use super::*;
 
     #[derive(Debug, Clone)]
     pub struct AccountLookup {

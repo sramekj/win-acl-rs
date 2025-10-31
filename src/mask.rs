@@ -4,30 +4,28 @@
 //! a safe `AccessMask` builder, and object-specific rights (files, registry, services).
 
 use bitflags::bitflags;
-
-use windows_sys::Win32::Storage::FileSystem::{
-    FILE_ALL_ACCESS, FILE_GENERIC_EXECUTE, FILE_GENERIC_READ, FILE_GENERIC_WRITE,
-};
-use windows_sys::Win32::System::Registry::{
-    KEY_ALL_ACCESS, KEY_CREATE_SUB_KEY, KEY_ENUMERATE_SUB_KEYS, KEY_NOTIFY, KEY_QUERY_VALUE, KEY_READ, KEY_SET_VALUE,
-    KEY_WRITE,
-};
-use windows_sys::Win32::System::Services::{
-    SERVICE_ALL_ACCESS, SERVICE_CHANGE_CONFIG, SERVICE_ENUMERATE_DEPENDENTS, SERVICE_INTERROGATE, SERVICE_QUERY_CONFIG,
-    SERVICE_QUERY_STATUS, SERVICE_START, SERVICE_STOP, SERVICE_USER_DEFINED_CONTROL,
-};
-
-use windows_sys::Win32::Graphics::Printing::{
-    PRINTER_ACCESS_ADMINISTER, PRINTER_ACCESS_MANAGE_LIMITED, PRINTER_ACCESS_USE, PRINTER_ALL_ACCESS, PRINTER_READ,
-    PRINTER_WRITE,
-};
-
 /// Re-export commonly used Windows access rights.
 pub use windows_sys::Win32::Foundation::{GENERIC_ALL, GENERIC_EXECUTE, GENERIC_READ, GENERIC_WRITE};
-
 /// Re-export commonly used Windows access rights.
 pub use windows_sys::Win32::Storage::FileSystem::{
     DELETE, READ_CONTROL, STANDARD_RIGHTS_ALL, SYNCHRONIZE, WRITE_DAC, WRITE_OWNER,
+};
+use windows_sys::Win32::{
+    Graphics::Printing::{
+        PRINTER_ACCESS_ADMINISTER, PRINTER_ACCESS_MANAGE_LIMITED, PRINTER_ACCESS_USE, PRINTER_ALL_ACCESS, PRINTER_READ,
+        PRINTER_WRITE,
+    },
+    Storage::FileSystem::{FILE_ALL_ACCESS, FILE_GENERIC_EXECUTE, FILE_GENERIC_READ, FILE_GENERIC_WRITE},
+    System::{
+        Registry::{
+            KEY_ALL_ACCESS, KEY_CREATE_SUB_KEY, KEY_ENUMERATE_SUB_KEYS, KEY_NOTIFY, KEY_QUERY_VALUE, KEY_READ,
+            KEY_SET_VALUE, KEY_WRITE,
+        },
+        Services::{
+            SERVICE_ALL_ACCESS, SERVICE_CHANGE_CONFIG, SERVICE_ENUMERATE_DEPENDENTS, SERVICE_INTERROGATE,
+            SERVICE_QUERY_CONFIG, SERVICE_QUERY_STATUS, SERVICE_START, SERVICE_STOP, SERVICE_USER_DEFINED_CONTROL,
+        },
+    },
 };
 
 bitflags! {

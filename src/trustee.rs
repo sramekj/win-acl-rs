@@ -1,15 +1,21 @@
 //! TODO
 
-use crate::error::WinError;
-use crate::sid::{AsSidRef, SidRef};
-use crate::utils::WideCString;
-use std::fmt::{Debug, Formatter};
-use std::marker::PhantomData;
-use std::ptr::null_mut;
-use std::str::FromStr;
+use std::{
+    fmt::{Debug, Formatter},
+    marker::PhantomData,
+    ptr::null_mut,
+    str::FromStr,
+};
+
 pub use windows_sys::Win32::Security::Authorization::TRUSTEE_TYPE;
 use windows_sys::Win32::Security::Authorization::{
     NO_MULTIPLE_TRUSTEE, TRUSTEE_IS_NAME, TRUSTEE_IS_SID, TRUSTEE_IS_UNKNOWN, TRUSTEE_W,
+};
+
+use crate::{
+    error::WinError,
+    sid::{AsSidRef, SidRef},
+    utils::WideCString,
 };
 
 /// TODO

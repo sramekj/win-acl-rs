@@ -1,8 +1,8 @@
 #![cfg(windows)]
 
 use std::str::FromStr;
-use win_acl_rs::sd::SecurityDescriptor;
-use win_acl_rs::sid::Sid;
+
+use win_acl_rs::{sd::SecurityDescriptor, sid::Sid};
 use windows_sys::Win32::Security::WinAnonymousSid;
 
 #[test]

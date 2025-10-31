@@ -26,6 +26,7 @@ pub use windows_sys::Win32::Security::Authorization::{
 /// Contains error definitions
 pub mod error {
     use std::fmt::{Debug, Display, Formatter};
+
     use windows_sys::Win32::Foundation::WIN32_ERROR;
 
     /// Result helper type

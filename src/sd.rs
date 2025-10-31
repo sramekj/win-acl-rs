@@ -2,29 +2,36 @@
 
 #![allow(non_snake_case)]
 
-use crate::acl::Acl;
-use crate::elevated::{Elevated, PrivilegeLevel, PrivilegeTokenImpl, Unprivileged};
-use crate::error::WinError;
-use crate::sid::SidRef;
-use crate::utils::WideCString;
-use crate::{assert_free, winapi_bool_call, winapi_call};
-use std::ffi::OsStr;
-use std::marker::PhantomData;
-use std::path::Path;
-use std::ptr::null_mut;
-use std::slice::from_raw_parts;
-use std::str::FromStr;
-use windows_sys::Win32::Foundation::TRUE;
-use windows_sys::Win32::Security::Authorization::{
-    ConvertSecurityDescriptorToStringSecurityDescriptorW, ConvertStringSecurityDescriptorToSecurityDescriptorW,
-    GetNamedSecurityInfoW, SDDL_REVISION_1, SE_FILE_OBJECT, SE_OBJECT_TYPE,
+use std::{ffi::OsStr, marker::PhantomData, path::Path, ptr::null_mut, slice::from_raw_parts, str::FromStr};
+
+use windows_sys::{
+    Win32::{
+        Foundation::TRUE,
+        Security::{
+            ACL,
+            Authorization::{
+                ConvertSecurityDescriptorToStringSecurityDescriptorW,
+                ConvertStringSecurityDescriptorToSecurityDescriptorW, GetNamedSecurityInfoW, SDDL_REVISION_1,
+                SE_FILE_OBJECT, SE_OBJECT_TYPE,
+            },
+            DACL_SECURITY_INFORMATION, GROUP_SECURITY_INFORMATION, GetSecurityDescriptorDacl,
+            GetSecurityDescriptorGroup, GetSecurityDescriptorOwner, GetSecurityDescriptorSacl,
+            IsValidSecurityDescriptor, OBJECT_SECURITY_INFORMATION, OWNER_SECURITY_INFORMATION, PSECURITY_DESCRIPTOR,
+            PSID, SACL_SECURITY_INFORMATION,
+        },
+    },
+    core::{BOOL, PCWSTR},
 };
-use windows_sys::Win32::Security::{
-    ACL, DACL_SECURITY_INFORMATION, GROUP_SECURITY_INFORMATION, GetSecurityDescriptorDacl, GetSecurityDescriptorGroup,
-    GetSecurityDescriptorOwner, GetSecurityDescriptorSacl, IsValidSecurityDescriptor, OBJECT_SECURITY_INFORMATION,
-    OWNER_SECURITY_INFORMATION, PSECURITY_DESCRIPTOR, PSID, SACL_SECURITY_INFORMATION,
+
+use crate::{
+    acl::Acl,
+    assert_free,
+    elevated::{Elevated, PrivilegeLevel, PrivilegeTokenImpl, Unprivileged},
+    error::WinError,
+    sid::SidRef,
+    utils::WideCString,
+    winapi_bool_call, winapi_call,
 };
-use windows_sys::core::{BOOL, PCWSTR};
 
 pub type SecurityDescriptor = SecurityDescriptorImpl<Unprivileged>;
 

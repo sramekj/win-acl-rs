@@ -1,8 +1,11 @@
 use std::str::FromStr;
+
 use tempfile::NamedTempFile;
-use win_acl_rs::SE_PRINTER;
-use win_acl_rs::elevated::{PrivilegeToken, SecurityDescriptorElevated, is_admin};
-use win_acl_rs::sd::SecurityDescriptor;
+use win_acl_rs::{
+    SE_PRINTER,
+    elevated::{PrivilegeToken, SecurityDescriptorElevated, is_admin},
+    sd::SecurityDescriptor,
+};
 
 pub fn main() -> win_acl_rs::error::Result<()> {
     let path = NamedTempFile::new().unwrap().into_temp_path();

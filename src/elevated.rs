@@ -2,23 +2,25 @@
 //! the process requires "SE_SECURITY_NAME" (*SeSecurityPrivilege*) privilege, would otherwise return WIN32_ERROR(1314) => "A required privilege is not held by the client"
 //! you can run `whoami /priv` to check it. You typically need to run the process as an Administrator and enable it using enable_se_security_privilege().
 
-use crate::error::WinError;
-use crate::sd::{ObjectSecurityEx, SecurityDescriptorImpl};
-use crate::utils::WideCString;
-use crate::winapi_bool_call;
-use std::ffi::OsStr;
-use std::marker::PhantomData;
-use std::path::Path;
-use std::ptr;
-use std::ptr::null_mut;
-use windows_sys::Win32::Foundation::{CloseHandle, ERROR_SUCCESS, GetLastError, HANDLE, LUID};
-use windows_sys::Win32::Security::Authorization::{SE_FILE_OBJECT, SE_OBJECT_TYPE};
-use windows_sys::Win32::Security::{
-    AdjustTokenPrivileges, GetTokenInformation, LookupPrivilegeValueW, OBJECT_SECURITY_INFORMATION,
-    SE_PRIVILEGE_ENABLED, SE_SECURITY_NAME, TOKEN_ADJUST_PRIVILEGES, TOKEN_ELEVATION, TOKEN_PRIVILEGES, TOKEN_QUERY,
-    TokenElevation,
+use std::{ffi::OsStr, marker::PhantomData, path::Path, ptr, ptr::null_mut};
+
+use windows_sys::Win32::{
+    Foundation::{CloseHandle, ERROR_SUCCESS, GetLastError, HANDLE, LUID},
+    Security::{
+        AdjustTokenPrivileges,
+        Authorization::{SE_FILE_OBJECT, SE_OBJECT_TYPE},
+        GetTokenInformation, LookupPrivilegeValueW, OBJECT_SECURITY_INFORMATION, SE_PRIVILEGE_ENABLED,
+        SE_SECURITY_NAME, TOKEN_ADJUST_PRIVILEGES, TOKEN_ELEVATION, TOKEN_PRIVILEGES, TOKEN_QUERY, TokenElevation,
+    },
+    System::Threading::{GetCurrentProcess, OpenProcessToken},
 };
-use windows_sys::Win32::System::Threading::{GetCurrentProcess, OpenProcessToken};
+
+use crate::{
+    error::WinError,
+    sd::{ObjectSecurityEx, SecurityDescriptorImpl},
+    utils::WideCString,
+    winapi_bool_call,
+};
 
 pub type SecurityDescriptorElevated = SecurityDescriptorImpl<Elevated>;
 

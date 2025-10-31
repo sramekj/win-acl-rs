@@ -1,11 +1,9 @@
 #![cfg(windows)]
 
 use std::str::FromStr;
+
 use tempfile::NamedTempFile;
-use win_acl_rs::SE_PRINTER;
-use win_acl_rs::elevated::is_admin;
-use win_acl_rs::error::Result;
-use win_acl_rs::sd::SecurityDescriptor;
+use win_acl_rs::{SE_PRINTER, elevated::is_admin, error::Result, sd::SecurityDescriptor};
 
 fn create_test_descriptor() -> Result<SecurityDescriptor> {
     let path = NamedTempFile::new().unwrap().into_temp_path();

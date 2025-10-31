@@ -1,19 +1,29 @@
 //! TODO
 
-use crate::error::WinError;
-use crate::sid::{Sid, SidRef};
-use crate::{assert_free, winapi_bool_call};
-use std::ffi::c_void;
-use std::fmt::{Debug, Formatter};
-use std::marker::PhantomData;
-use windows_sys::Win32::Foundation::{ERROR_OUTOFMEMORY, FALSE};
-use windows_sys::Win32::Security::{
-    ACCESS_ALLOWED_ACE, ACE_HEADER, ACL, ACL_REVISION, ACL_SIZE_INFORMATION, AclSizeInformation, AddAccessAllowedAce,
-    AddAccessDeniedAce, DeleteAce, GetAce, GetAclInformation, GetLengthSid, InitializeAcl, IsValidAcl, PSID,
+use std::{
+    ffi::c_void,
+    fmt::{Debug, Formatter},
+    marker::PhantomData,
 };
-use windows_sys::Win32::System::Memory::{LMEM_FIXED, LocalAlloc};
-use windows_sys::Win32::System::SystemServices::{
-    ACCESS_ALLOWED_ACE_TYPE, ACCESS_DENIED_ACE_TYPE, SYSTEM_AUDIT_ACE_TYPE,
+
+use windows_sys::Win32::{
+    Foundation::{ERROR_OUTOFMEMORY, FALSE},
+    Security::{
+        ACCESS_ALLOWED_ACE, ACE_HEADER, ACL, ACL_REVISION, ACL_SIZE_INFORMATION, AclSizeInformation,
+        AddAccessAllowedAce, AddAccessDeniedAce, DeleteAce, GetAce, GetAclInformation, GetLengthSid, InitializeAcl,
+        IsValidAcl, PSID,
+    },
+    System::{
+        Memory::{LMEM_FIXED, LocalAlloc},
+        SystemServices::{ACCESS_ALLOWED_ACE_TYPE, ACCESS_DENIED_ACE_TYPE, SYSTEM_AUDIT_ACE_TYPE},
+    },
+};
+
+use crate::{
+    assert_free,
+    error::WinError,
+    sid::{Sid, SidRef},
+    winapi_bool_call,
 };
 
 /// TODO
