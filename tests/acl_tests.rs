@@ -3,6 +3,7 @@
 use std::str::FromStr;
 
 use win_acl_rs::{
+    acl::AceType::AccessAllowed,
     acl::Acl,
     mask::FileAccess,
     sd::SecurityDescriptor,
@@ -47,6 +48,23 @@ fn test_iter() {
     for ace in &acl {
         println!("{:?}", ace);
     }
+}
+
+#[test]
+#[ignore] // would fail on CI
+fn test_mask_and_type() {
+    let mut acl = Acl::empty().unwrap();
+    let mask = FileAccess::READ | FileAccess::WRITE;
+    let sid = Sid::from_string("S-1-1-0").unwrap();
+    acl.allow(mask.as_u32(), &sid).unwrap();
+
+    assert!(acl.is_valid());
+    assert_eq!(acl.ace_count(), 1);
+
+    let ace = acl.into_iter().next().unwrap();
+
+    assert_eq!(ace.ace_type(), AccessAllowed);
+    assert_eq!(ace.mask(), mask.as_u32());
 }
 
 #[test]
