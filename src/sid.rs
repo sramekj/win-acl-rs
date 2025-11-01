@@ -112,6 +112,14 @@ impl FromStr for Sid {
     }
 }
 
+impl TryFrom<&str> for Sid {
+    type Error = WinError;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        Sid::from_string(value)
+    }
+}
+
 impl Display for Sid {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let str = self.to_string().unwrap_or_else(|_| "<invalid sid>".into());
