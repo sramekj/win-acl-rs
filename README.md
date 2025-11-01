@@ -13,6 +13,8 @@ A simple and safe abstraction over Windows ACLs (Access Control Lists) and secur
 - Query and modify file, registry, service, and other object permissions
 - Support both standard and elevated privilege operations
 
+**Note:** This crate is Windows-only and will not compile on other platforms.
+
 ## Examples
 
 ### Working with SIDs
@@ -155,18 +157,6 @@ if win_acl_rs::elevated::is_admin()? {
     }
 }
 ```
-
-## Usage
-
-Add this to your `Cargo.toml`:
-
-```toml
-[dependencies]
-win-acl-rs = "0.1"
-```
-
-**Note:** This crate is Windows-only and will not compile on other platforms.
-
 
 ## License
 

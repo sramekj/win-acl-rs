@@ -105,7 +105,6 @@ dependencies = [
 name = "win-acl-rs"
 version = "0.1.0"
 dependencies = [
- "bitflags",
  "tempfile",
  "windows-sys",
 ]
