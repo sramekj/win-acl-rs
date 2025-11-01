@@ -392,38 +392,45 @@
 <a href=#392 id=392 data-nosnippet>392</a>    /// An owned `Sid` containing the security identifier, or an error if the SID cannot be extracted.
 <a href=#393 id=393 data-nosnippet>393</a>    </span><span class="kw">pub fn </span>sid(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;Sid, WinError&gt; {
 <a href=#394 id=394 data-nosnippet>394</a>        <span class="kw">unsafe </span>{
-<a href=#395 id=395 data-nosnippet>395</a>            <span class="kw">let </span>header = <span class="kw-2">&amp;*</span>(<span class="self">self</span>.ptr <span class="kw">as </span><span class="kw-2">*const </span>ACCESS_ALLOWED_ACE);
-<a href=#396 id=396 data-nosnippet>396</a>            <span class="kw">let </span>sid_ptr = <span class="kw-2">&amp;</span>header.SidStart <span class="kw">as </span><span class="kw-2">*const </span><span class="kw">_ as </span>PSID;
-<a href=#397 id=397 data-nosnippet>397</a>            <span class="kw">let </span>len = GetLengthSid(sid_ptr) <span class="kw">as </span>usize;
-<a href=#398 id=398 data-nosnippet>398</a>            <span class="kw">let </span>data = std::slice::from_raw_parts(sid_ptr <span class="kw">as </span><span class="kw-2">*const </span>u8, len).to_vec();
-<a href=#399 id=399 data-nosnippet>399</a>            Sid::from_bytes(<span class="kw-2">&amp;</span>data)
-<a href=#400 id=400 data-nosnippet>400</a>        }
-<a href=#401 id=401 data-nosnippet>401</a>    }
-<a href=#402 id=402 data-nosnippet>402</a>
-<a href=#403 id=403 data-nosnippet>403</a>    <span class="doccomment">/// Returns the access mask from this ACE.
-<a href=#404 id=404 data-nosnippet>404</a>    ///
-<a href=#405 id=405 data-nosnippet>405</a>    /// The access mask is a bitmask that specifies the access rights granted or denied by this ACE.
-<a href=#406 id=406 data-nosnippet>406</a>    ///
-<a href=#407 id=407 data-nosnippet>407</a>    /// # Returns
-<a href=#408 id=408 data-nosnippet>408</a>    ///
-<a href=#409 id=409 data-nosnippet>409</a>    /// A `u32` bitmask representing the access rights. Common values include `GENERIC_READ`,
-<a href=#410 id=410 data-nosnippet>410</a>    /// `GENERIC_WRITE`, `GENERIC_EXECUTE`, `GENERIC_ALL`, or object-specific rights.
-<a href=#411 id=411 data-nosnippet>411</a>    </span><span class="kw">pub fn </span>mask(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; u32 {
-<a href=#412 id=412 data-nosnippet>412</a>        <span class="kw">unsafe </span>{ (<span class="kw-2">*</span>(<span class="self">self</span>.ptr <span class="kw">as </span><span class="kw-2">*const </span>ACCESS_ALLOWED_ACE)).Mask }
-<a href=#413 id=413 data-nosnippet>413</a>    }
-<a href=#414 id=414 data-nosnippet>414</a>}
-<a href=#415 id=415 data-nosnippet>415</a>
-<a href=#416 id=416 data-nosnippet>416</a><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; Debug <span class="kw">for </span>Ace&lt;<span class="lifetime">'a</span>&gt; {
-<a href=#417 id=417 data-nosnippet>417</a>    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>Formatter&lt;<span class="lifetime">'_</span>&gt;) -&gt; std::fmt::Result {
-<a href=#418 id=418 data-nosnippet>418</a>        <span class="kw">let </span>account_lookup = <span class="kw">match </span><span class="self">self</span>.sid().map(|sid| sid.lookup_name()) {
-<a href=#419 id=419 data-nosnippet>419</a>            <span class="prelude-val">Ok</span>(<span class="prelude-val">Ok</span>(lookup)) =&gt; <span class="macro">format!</span>(<span class="string">"{}/{}"</span>, lookup.domain, lookup.name),
-<a href=#420 id=420 data-nosnippet>420</a>            <span class="kw">_ </span>=&gt; <span class="string">"&lt;INVALID SID&gt;"</span>.to_owned(),
-<a href=#421 id=421 data-nosnippet>421</a>        };
+<a href=#395 id=395 data-nosnippet>395</a>            <span class="comment">// Calculate offset to SidStart: after ACE_HEADER + Mask (u32)
+<a href=#396 id=396 data-nosnippet>396</a>            </span><span class="kw">let </span>mask_offset = size_of::&lt;ACE_HEADER&gt;();
+<a href=#397 id=397 data-nosnippet>397</a>            <span class="kw">let </span>sid_offset = mask_offset + size_of::&lt;u32&gt;();
+<a href=#398 id=398 data-nosnippet>398</a>            <span class="kw">let </span>sid_ptr = (<span class="self">self</span>.ptr <span class="kw">as </span><span class="kw-2">*const </span>u8).add(sid_offset) <span class="kw">as </span>PSID;
+<a href=#399 id=399 data-nosnippet>399</a>
+<a href=#400 id=400 data-nosnippet>400</a>            <span class="kw">let </span>len = GetLengthSid(sid_ptr) <span class="kw">as </span>usize;
+<a href=#401 id=401 data-nosnippet>401</a>            <span class="kw">let </span>data = std::slice::from_raw_parts(sid_ptr <span class="kw">as </span><span class="kw-2">*const </span>u8, len).to_vec();
+<a href=#402 id=402 data-nosnippet>402</a>            Sid::from_bytes(<span class="kw-2">&amp;</span>data)
+<a href=#403 id=403 data-nosnippet>403</a>        }
+<a href=#404 id=404 data-nosnippet>404</a>    }
+<a href=#405 id=405 data-nosnippet>405</a>
+<a href=#406 id=406 data-nosnippet>406</a>    <span class="doccomment">/// Returns the access mask from this ACE.
+<a href=#407 id=407 data-nosnippet>407</a>    ///
+<a href=#408 id=408 data-nosnippet>408</a>    /// The access mask is a bitmask that specifies the access rights granted or denied by this ACE.
+<a href=#409 id=409 data-nosnippet>409</a>    ///
+<a href=#410 id=410 data-nosnippet>410</a>    /// # Returns
+<a href=#411 id=411 data-nosnippet>411</a>    ///
+<a href=#412 id=412 data-nosnippet>412</a>    /// A `u32` bitmask representing the access rights. Common values include `GENERIC_READ`,
+<a href=#413 id=413 data-nosnippet>413</a>    /// `GENERIC_WRITE`, `GENERIC_EXECUTE`, `GENERIC_ALL`, or object-specific rights.
+<a href=#414 id=414 data-nosnippet>414</a>    </span><span class="kw">pub fn </span>mask(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; u32 {
+<a href=#415 id=415 data-nosnippet>415</a>        <span class="kw">unsafe </span>{
+<a href=#416 id=416 data-nosnippet>416</a>            <span class="kw">let </span>mask_offset = size_of::&lt;ACE_HEADER&gt;();
+<a href=#417 id=417 data-nosnippet>417</a>            <span class="kw">let </span>mask_ptr = (<span class="self">self</span>.ptr <span class="kw">as </span><span class="kw-2">*const </span>u8).add(mask_offset) <span class="kw">as </span><span class="kw-2">*const </span>u32;
+<a href=#418 id=418 data-nosnippet>418</a>            <span class="kw-2">*</span>mask_ptr
+<a href=#419 id=419 data-nosnippet>419</a>        }
+<a href=#420 id=420 data-nosnippet>420</a>    }
+<a href=#421 id=421 data-nosnippet>421</a>}
 <a href=#422 id=422 data-nosnippet>422</a>
-<a href=#423 id=423 data-nosnippet>423</a>        f.debug_struct(<span class="string">"Ace"</span>)
-<a href=#424 id=424 data-nosnippet>424</a>            .field(<span class="string">"account_lookup"</span>, <span class="kw-2">&amp;</span>account_lookup)
-<a href=#425 id=425 data-nosnippet>425</a>            .field(<span class="string">"mask"</span>, <span class="kw-2">&amp;</span><span class="macro">format_args!</span>(<span class="string">"{:b}b, 0x{:X}"</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.mask(), <span class="kw-2">&amp;</span><span class="self">self</span>.mask()))
-<a href=#426 id=426 data-nosnippet>426</a>            .field(<span class="string">"ace_type"</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.ace_type())
-<a href=#427 id=427 data-nosnippet>427</a>            .finish()
-<a href=#428 id=428 data-nosnippet>428</a>    }
-<a href=#429 id=429 data-nosnippet>429</a>}</code></pre></div></section></main></body></html>
+<a href=#423 id=423 data-nosnippet>423</a><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; Debug <span class="kw">for </span>Ace&lt;<span class="lifetime">'a</span>&gt; {
+<a href=#424 id=424 data-nosnippet>424</a>    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>Formatter&lt;<span class="lifetime">'_</span>&gt;) -&gt; std::fmt::Result {
+<a href=#425 id=425 data-nosnippet>425</a>        <span class="kw">let </span>account_lookup = <span class="kw">match </span><span class="self">self</span>.sid().map(|sid| sid.lookup_name()) {
+<a href=#426 id=426 data-nosnippet>426</a>            <span class="prelude-val">Ok</span>(<span class="prelude-val">Ok</span>(lookup)) =&gt; <span class="macro">format!</span>(<span class="string">"{}/{}"</span>, lookup.domain, lookup.name),
+<a href=#427 id=427 data-nosnippet>427</a>            <span class="kw">_ </span>=&gt; <span class="string">"&lt;INVALID SID&gt;"</span>.to_owned(),
+<a href=#428 id=428 data-nosnippet>428</a>        };
+<a href=#429 id=429 data-nosnippet>429</a>
+<a href=#430 id=430 data-nosnippet>430</a>        f.debug_struct(<span class="string">"Ace"</span>)
+<a href=#431 id=431 data-nosnippet>431</a>            .field(<span class="string">"account_lookup"</span>, <span class="kw-2">&amp;</span>account_lookup)
+<a href=#432 id=432 data-nosnippet>432</a>            .field(<span class="string">"mask"</span>, <span class="kw-2">&amp;</span><span class="macro">format_args!</span>(<span class="string">"{:b}b, 0x{:X}"</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.mask(), <span class="kw-2">&amp;</span><span class="self">self</span>.mask()))
+<a href=#433 id=433 data-nosnippet>433</a>            .field(<span class="string">"ace_type"</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.ace_type())
+<a href=#434 id=434 data-nosnippet>434</a>            .finish()
+<a href=#435 id=435 data-nosnippet>435</a>    }
+<a href=#436 id=436 data-nosnippet>436</a>}</code></pre></div></section></main></body></html>

@@ -392,8 +392,11 @@ impl<'a> Ace<'a> {
     /// An owned `Sid` containing the security identifier, or an error if the SID cannot be extracted.
     pub fn sid(&self) -> Result<Sid, WinError> {
         unsafe {
-            let header = &*(self.ptr as *const ACCESS_ALLOWED_ACE);
-            let sid_ptr = &header.SidStart as *const _ as PSID;
+            // Calculate offset to SidStart: after ACE_HEADER + Mask (u32)
+            let mask_offset = size_of::<ACE_HEADER>();
+            let sid_offset = mask_offset + size_of::<u32>();
+            let sid_ptr = (self.ptr as *const u8).add(sid_offset) as PSID;
+
             let len = GetLengthSid(sid_ptr) as usize;
             let data = std::slice::from_raw_parts(sid_ptr as *const u8, len).to_vec();
             Sid::from_bytes(&data)
@@ -409,7 +412,11 @@ impl<'a> Ace<'a> {
     /// A `u32` bitmask representing the access rights. Common values include `GENERIC_READ`,
     /// `GENERIC_WRITE`, `GENERIC_EXECUTE`, `GENERIC_ALL`, or object-specific rights.
     pub fn mask(&self) -> u32 {
-        unsafe { (*(self.ptr as *const ACCESS_ALLOWED_ACE)).Mask }
+        unsafe {
+            let mask_offset = size_of::<ACE_HEADER>();
+            let mask_ptr = (self.ptr as *const u8).add(mask_offset) as *const u32;
+            *mask_ptr
+        }
     }
 }
 
