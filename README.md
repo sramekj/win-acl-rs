@@ -48,11 +48,15 @@ let mut acl = Acl::new()?;
 
 // Add an access-allowed ACE using well-known SID
 let everyone_sid = Sid::from_well_known_sid(WinWorldSid)?;
-acl.allow(AccessMask::full().as_u32(), &everyone_sid)?;
+acl.allow(AccessMask::full(), &everyone_sid)?;
 
 // Add read-only access for Administrators
 let admin_sid = Sid::from_well_known_sid(WinBuiltinAdministratorsSid)?;
-acl.allow(AccessMask::read().as_u32(), &admin_sid)?;
+acl.allow(AccessMask::read(), &admin_sid)?;
+
+// You can also use object-specific access masks
+use win_acl_rs::mask::FileAccess;
+acl.allow(FileAccess::READ, &everyone_sid)?;
 
 // Iterate over ACEs
 for ace in &acl {

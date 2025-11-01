@@ -172,6 +172,24 @@ impl AccessMask {
     }
 }
 
+impl From<AccessMask> for u32 {
+    fn from(mask: AccessMask) -> Self {
+        mask.0
+    }
+}
+
+impl From<u32> for AccessMask {
+    fn from(value: u32) -> Self {
+        AccessMask(value)
+    }
+}
+
+impl From<i32> for AccessMask {
+    fn from(value: i32) -> Self {
+        AccessMask(value as u32)
+    }
+}
+
 bit_ops!(AccessMask);
 
 /// File object-specific access rights.
@@ -200,6 +218,24 @@ impl FileAccess {
     /// Useful when passing the mask to low-level Windows APIs that expect a `u32`.
     pub fn as_u32(self) -> u32 {
         self.0
+    }
+}
+
+impl From<FileAccess> for u32 {
+    fn from(mask: FileAccess) -> Self {
+        mask.0
+    }
+}
+
+impl From<u32> for FileAccess {
+    fn from(value: u32) -> Self {
+        FileAccess(value)
+    }
+}
+
+impl From<i32> for FileAccess {
+    fn from(value: i32) -> Self {
+        FileAccess(value as u32)
     }
 }
 
@@ -239,6 +275,24 @@ impl RegistryAccess {
     /// Useful when passing the mask to low-level Windows APIs that expect a `u32`.
     pub fn as_u32(self) -> u32 {
         self.0
+    }
+}
+
+impl From<RegistryAccess> for u32 {
+    fn from(mask: RegistryAccess) -> Self {
+        mask.0
+    }
+}
+
+impl From<u32> for RegistryAccess {
+    fn from(value: u32) -> Self {
+        RegistryAccess(value)
+    }
+}
+
+impl From<i32> for RegistryAccess {
+    fn from(value: i32) -> Self {
+        RegistryAccess(value as u32)
     }
 }
 
@@ -283,6 +337,24 @@ impl ServiceAccess {
     }
 }
 
+impl From<ServiceAccess> for u32 {
+    fn from(mask: ServiceAccess) -> Self {
+        mask.0
+    }
+}
+
+impl From<u32> for ServiceAccess {
+    fn from(value: u32) -> Self {
+        ServiceAccess(value)
+    }
+}
+
+impl From<i32> for ServiceAccess {
+    fn from(value: i32) -> Self {
+        ServiceAccess(value as u32)
+    }
+}
+
 bit_ops!(ServiceAccess);
 
 /// Printer object access rights.
@@ -315,6 +387,24 @@ impl PrinterAccess {
     /// Useful when passing the mask to low-level Windows APIs that expect a `u32`.
     pub fn as_u32(self) -> u32 {
         self.0
+    }
+}
+
+impl From<PrinterAccess> for u32 {
+    fn from(mask: PrinterAccess) -> Self {
+        mask.0
+    }
+}
+
+impl From<u32> for PrinterAccess {
+    fn from(value: u32) -> Self {
+        PrinterAccess(value)
+    }
+}
+
+impl From<i32> for PrinterAccess {
+    fn from(value: i32) -> Self {
+        PrinterAccess(value as u32)
     }
 }
 

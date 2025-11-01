@@ -3,8 +3,7 @@
 use std::str::FromStr;
 
 use win_acl_rs::{
-    acl::AceType::AccessAllowed,
-    acl::Acl,
+    acl::{AceType::AccessAllowed, Acl},
     mask::FileAccess,
     sd::SecurityDescriptor,
     sid::{AsSidRef, Sid},

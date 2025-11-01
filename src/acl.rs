@@ -15,11 +15,11 @@
 //!
 //! // Add an access-allowed ACE using well-known SID
 //! let sid = Sid::from_well_known_sid(WinWorldSid)?; // Everyone SID
-//! acl.allow(AccessMask::full().as_u32(), &sid)?;
+//! acl.allow(AccessMask::full(), &sid)?; // No .as_u32() needed!
 //!
 //! // Or use a string-based SID
 //! let admin_sid = Sid::from_string("S-1-5-32-544")?; // Administrators
-//! acl.allow(AccessMask::read().as_u32(), &admin_sid)?;
+//! acl.allow(AccessMask::read(), &admin_sid)?;
 //!
 //! // Iterate over ACEs
 //! for ace in &acl {
@@ -32,6 +32,7 @@ use std::{
     ffi::c_void,
     fmt::{Debug, Formatter},
     marker::PhantomData,
+    mem::size_of,
 };
 
 use windows_sys::Win32::{
@@ -50,6 +51,7 @@ use windows_sys::Win32::{
 use crate::{
     assert_free,
     error::WinError,
+    mask::AccessMask,
     sid::{AsSidRef, Sid},
     winapi_bool_call,
 };
@@ -229,24 +231,40 @@ impl Acl {
     ///
     /// # Arguments
     ///
-    /// * `access_mask` - A bitmask specifying the access rights to grant. Common values include
-    ///   `GENERIC_READ`, `GENERIC_WRITE`, `GENERIC_EXECUTE`, `GENERIC_ALL`, or object-specific
-    ///   rights from the `mask` module.
+    /// * `access_mask` - A bitmask specifying the access rights to grant. Can be:
+    ///   - An `AccessMask` or other mask type from the `mask` module (recommended)
+    ///   - A raw `u32` for low-level control
     /// * `sid_ref` - The SID (Security Identifier) of the security principal to grant access to.
     ///   Can be a `Sid`, `SidRef`, or any type implementing `AsSidRef`.
     ///
     /// # Errors
     ///
     /// Returns an error if the ACE cannot be added (e.g., insufficient memory).
-    pub fn allow<'a, S>(&mut self, access_mask: u32, sid_ref: &'a S) -> Result<(), WinError>
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use win_acl_rs::{acl::Acl, mask::AccessMask, sid::Sid};
+    /// use win_acl_rs::wellknown::WinWorldSid;
+    ///
+    /// let mut acl = Acl::new()?;
+    /// let sid = Sid::from_well_known_sid(WinWorldSid)?;
+    /// // Using AccessMask type
+    /// acl.allow(AccessMask::full(), &sid)?;
+    /// // Or with raw u32/i32
+    /// acl.allow(0x1F01FF, &sid)?;
+    /// # Ok::<(), win_acl_rs::error::WinError>(())
+    /// ```
+    pub fn allow<'a, S, M>(&mut self, access_mask: M, sid_ref: &'a S) -> Result<(), WinError>
     where
         S: AsSidRef<'a>,
+        M: Into<AccessMask>,
     {
         unsafe {
             winapi_bool_call!(AddAccessAllowedAce(
                 self.ptr,
                 ACL_REVISION,
-                access_mask,
+                access_mask.into().as_u32(),
                 sid_ref.as_sid_ref().as_ptr() as _,
             ))
         };
@@ -260,24 +278,38 @@ impl Acl {
     ///
     /// # Arguments
     ///
-    /// * `access_mask` - A bitmask specifying the access rights to deny. Common values include
-    ///   `GENERIC_READ`, `GENERIC_WRITE`, `GENERIC_EXECUTE`, `GENERIC_ALL`, or object-specific
-    ///   rights from the `mask` module.
+    /// * `access_mask` - A bitmask specifying the access rights to deny. Can be:
+    ///   - An `AccessMask` or other mask type from the `mask` module (recommended)
+    ///   - A raw `u32` for low-level control
     /// * `sid_ref` - The SID (Security Identifier) of the security principal to deny access to.
     ///   Can be a `Sid`, `SidRef`, or any type implementing `AsSidRef`.
     ///
     /// # Errors
     ///
     /// Returns an error if the ACE cannot be added (e.g., insufficient memory).
-    pub fn deny<'a, S>(&mut self, access_mask: u32, sid_ref: &'a S) -> Result<(), WinError>
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use win_acl_rs::{acl::Acl, mask::AccessMask, sid::Sid};
+    /// use win_acl_rs::wellknown::WinWorldSid;
+    ///
+    /// let mut acl = Acl::new()?;
+    /// let sid = Sid::from_well_known_sid(WinWorldSid)?;
+    /// // Using AccessMask type
+    /// acl.deny(AccessMask::read(), &sid)?;
+    /// # Ok::<(), win_acl_rs::error::WinError>(())
+    /// ```
+    pub fn deny<'a, S, M>(&mut self, access_mask: M, sid_ref: &'a S) -> Result<(), WinError>
     where
         S: AsSidRef<'a>,
+        M: Into<AccessMask>,
     {
         unsafe {
             winapi_bool_call!(AddAccessDeniedAce(
                 self.ptr,
                 ACL_REVISION,
-                access_mask,
+                access_mask.into().as_u32(),
                 sid_ref.as_sid_ref().as_ptr() as _
             ))
         };
