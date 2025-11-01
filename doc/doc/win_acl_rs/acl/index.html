@@ -11,11 +11,11 @@ validating, and manipulating ACLs.</p>
 
 <span class="comment">// Add an access-allowed ACE using well-known SID
 </span><span class="kw">let </span>sid = Sid::from_well_known_sid(WinWorldSid)<span class="question-mark">?</span>; <span class="comment">// Everyone SID
-</span>acl.add_allowed_ace(AccessMask::full().as_u32(), <span class="kw-2">&amp;</span>sid)<span class="question-mark">?</span>;
+</span>acl.allow(AccessMask::full().as_u32(), <span class="kw-2">&amp;</span>sid)<span class="question-mark">?</span>;
 
 <span class="comment">// Or use a string-based SID
 </span><span class="kw">let </span>admin_sid = Sid::from_string(<span class="string">"S-1-5-32-544"</span>)<span class="question-mark">?</span>; <span class="comment">// Administrators
-</span>acl.add_allowed_ace(AccessMask::read().as_u32(), <span class="kw-2">&amp;</span>admin_sid)<span class="question-mark">?</span>;
+</span>acl.allow(AccessMask::read().as_u32(), <span class="kw-2">&amp;</span>admin_sid)<span class="question-mark">?</span>;
 
 <span class="comment">// Iterate over ACEs
 </span><span class="kw">for </span>ace <span class="kw">in </span><span class="kw-2">&amp;</span>acl {

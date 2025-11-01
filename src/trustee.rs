@@ -55,12 +55,16 @@ impl<'a> Trustee<'a> {
     ///
     /// # Arguments
     ///
-    /// * `sid_ref` - A reference to a SID (Security Identifier).
+    /// * `sid_ref` - The SID (Security Identifier).
+    //    Can be a `Sid`, `SidRef`, or any type implementing `AsSidRef`.
     ///
     /// # Returns
     ///
     /// A `Trustee` that references the security principal identified by the SID.
-    pub fn from_sid_ref(sid_ref: SidRef<'a>) -> Self {
+    pub fn from_sid_ref<S>(sid_ref: &'a S) -> Self
+    where
+        S: AsSidRef<'a>,
+    {
         let sid_ref = sid_ref.as_sid_ref();
         let trustee = TRUSTEE_W {
             pMultipleTrustee: null_mut(),

@@ -15,11 +15,11 @@
 //!
 //! // Add an access-allowed ACE using well-known SID
 //! let sid = Sid::from_well_known_sid(WinWorldSid)?; // Everyone SID
-//! acl.add_allowed_ace(AccessMask::full().as_u32(), &sid)?;
+//! acl.allow(AccessMask::full().as_u32(), &sid)?;
 //!
 //! // Or use a string-based SID
 //! let admin_sid = Sid::from_string("S-1-5-32-544")?; // Administrators
-//! acl.add_allowed_ace(AccessMask::read().as_u32(), &admin_sid)?;
+//! acl.allow(AccessMask::read().as_u32(), &admin_sid)?;
 //!
 //! // Iterate over ACEs
 //! for ace in &acl {
@@ -238,7 +238,7 @@ impl Acl {
     /// # Errors
     ///
     /// Returns an error if the ACE cannot be added (e.g., insufficient memory).
-    pub fn add_allowed_ace<'a, S>(&mut self, access_mask: u32, sid_ref: &'a S) -> Result<(), WinError>
+    pub fn allow<'a, S>(&mut self, access_mask: u32, sid_ref: &'a S) -> Result<(), WinError>
     where
         S: AsSidRef<'a>,
     {
@@ -269,7 +269,7 @@ impl Acl {
     /// # Errors
     ///
     /// Returns an error if the ACE cannot be added (e.g., insufficient memory).
-    pub fn add_denied_ace<'a, S>(&mut self, access_mask: u32, sid_ref: &'a S) -> Result<(), WinError>
+    pub fn deny<'a, S>(&mut self, access_mask: u32, sid_ref: &'a S) -> Result<(), WinError>
     where
         S: AsSidRef<'a>,
     {

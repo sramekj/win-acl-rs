@@ -15,11 +15,11 @@
 <a href=#15 id=15 data-nosnippet>15</a>//!
 <a href=#16 id=16 data-nosnippet>16</a>//! // Add an access-allowed ACE using well-known SID
 <a href=#17 id=17 data-nosnippet>17</a>//! let sid = Sid::from_well_known_sid(WinWorldSid)?; // Everyone SID
-<a href=#18 id=18 data-nosnippet>18</a>//! acl.add_allowed_ace(AccessMask::full().as_u32(), &amp;sid)?;
+<a href=#18 id=18 data-nosnippet>18</a>//! acl.allow(AccessMask::full().as_u32(), &amp;sid)?;
 <a href=#19 id=19 data-nosnippet>19</a>//!
 <a href=#20 id=20 data-nosnippet>20</a>//! // Or use a string-based SID
 <a href=#21 id=21 data-nosnippet>21</a>//! let admin_sid = Sid::from_string("S-1-5-32-544")?; // Administrators
-<a href=#22 id=22 data-nosnippet>22</a>//! acl.add_allowed_ace(AccessMask::read().as_u32(), &amp;admin_sid)?;
+<a href=#22 id=22 data-nosnippet>22</a>//! acl.allow(AccessMask::read().as_u32(), &amp;admin_sid)?;
 <a href=#23 id=23 data-nosnippet>23</a>//!
 <a href=#24 id=24 data-nosnippet>24</a>//! // Iterate over ACEs
 <a href=#25 id=25 data-nosnippet>25</a>//! for ace in &amp;acl {
@@ -238,7 +238,7 @@
 <a href=#238 id=238 data-nosnippet>238</a>    /// # Errors
 <a href=#239 id=239 data-nosnippet>239</a>    ///
 <a href=#240 id=240 data-nosnippet>240</a>    /// Returns an error if the ACE cannot be added (e.g., insufficient memory).
-<a href=#241 id=241 data-nosnippet>241</a>    </span><span class="kw">pub fn </span>add_allowed_ace&lt;<span class="lifetime">'a</span>, S&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>, access_mask: u32, sid_ref: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>S) -&gt; <span class="prelude-ty">Result</span>&lt;(), WinError&gt;
+<a href=#241 id=241 data-nosnippet>241</a>    </span><span class="kw">pub fn </span>allow&lt;<span class="lifetime">'a</span>, S&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>, access_mask: u32, sid_ref: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>S) -&gt; <span class="prelude-ty">Result</span>&lt;(), WinError&gt;
 <a href=#242 id=242 data-nosnippet>242</a>    <span class="kw">where
 <a href=#243 id=243 data-nosnippet>243</a>        </span>S: AsSidRef&lt;<span class="lifetime">'a</span>&gt;,
 <a href=#244 id=244 data-nosnippet>244</a>    {
@@ -269,7 +269,7 @@
 <a href=#269 id=269 data-nosnippet>269</a>    /// # Errors
 <a href=#270 id=270 data-nosnippet>270</a>    ///
 <a href=#271 id=271 data-nosnippet>271</a>    /// Returns an error if the ACE cannot be added (e.g., insufficient memory).
-<a href=#272 id=272 data-nosnippet>272</a>    </span><span class="kw">pub fn </span>add_denied_ace&lt;<span class="lifetime">'a</span>, S&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>, access_mask: u32, sid_ref: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>S) -&gt; <span class="prelude-ty">Result</span>&lt;(), WinError&gt;
+<a href=#272 id=272 data-nosnippet>272</a>    </span><span class="kw">pub fn </span>deny&lt;<span class="lifetime">'a</span>, S&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>, access_mask: u32, sid_ref: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>S) -&gt; <span class="prelude-ty">Result</span>&lt;(), WinError&gt;
 <a href=#273 id=273 data-nosnippet>273</a>    <span class="kw">where
 <a href=#274 id=274 data-nosnippet>274</a>        </span>S: AsSidRef&lt;<span class="lifetime">'a</span>&gt;,
 <a href=#275 id=275 data-nosnippet>275</a>    {

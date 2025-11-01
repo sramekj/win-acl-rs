@@ -365,7 +365,7 @@ impl Sid {
     ///
     /// A `Trustee` that references this SID.
     pub fn as_trustee(&'_ self) -> Trustee<'_> {
-        Trustee::from_sid_ref(self.as_sid_ref())
+        Trustee::from_sid_ref(self)
     }
 
     /// Converts the SID to a byte vector.
@@ -504,8 +504,7 @@ impl<'a> SidRef<'a> {
     ///
     /// A `Trustee` that references this SID.
     pub fn as_trustee(&'_ self) -> Trustee<'_> {
-        let sid_ref = self.as_sid_ref();
-        Trustee::from_sid_ref(sid_ref)
+        Trustee::from_sid_ref(self)
     }
 
     /// Converts the SID to a byte vector.
