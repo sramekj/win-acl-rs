@@ -56,7 +56,7 @@ the number of reallocations needed.</p>
     sid_ref: <a class="primitive" href="https://doc.rust-lang.org/1.90.0/std/primitive.reference.html">&amp;'a S</a>,
 ) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.90.0/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/1.90.0/std/primitive.unit.html">()</a>, <a class="struct" href="../error/struct.WinError.html" title="struct win_acl_rs::error::WinError">WinError</a>&gt;<div class="where">where
     S: <a class="trait" href="../sid/trait.AsSidRef.html" title="trait win_acl_rs::sid::AsSidRef">AsSidRef</a>&lt;'a&gt;,
-    M: <a class="trait" href="https://doc.rust-lang.org/1.90.0/core/convert/trait.Into.html" title="trait core::convert::Into">Into</a>&lt;<a class="struct" href="../mask/struct.AccessMask.html" title="struct win_acl_rs::mask::AccessMask">AccessMask</a>&gt;,</div></h4></section></summary><div class="docblock"><p>Adds an access-allowed ACE to the ACL.</p>
+    M: <a class="trait" href="../mask/trait.Mask.html" title="trait win_acl_rs::mask::Mask">Mask</a>,</div></h4></section></summary><div class="docblock"><p>Adds an access-allowed ACE to the ACL.</p>
 <p>An access-allowed ACE grants the specified access rights to the given security principal.</p>
 <h5 id="arguments-2"><a class="doc-anchor" href="#arguments-2">§</a>Arguments</h5>
 <ul>
@@ -87,7 +87,7 @@ Can be a <code>Sid</code>, <code>SidRef</code>, or any type implementing <code>A
     sid_ref: <a class="primitive" href="https://doc.rust-lang.org/1.90.0/std/primitive.reference.html">&amp;'a S</a>,
 ) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.90.0/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/1.90.0/std/primitive.unit.html">()</a>, <a class="struct" href="../error/struct.WinError.html" title="struct win_acl_rs::error::WinError">WinError</a>&gt;<div class="where">where
     S: <a class="trait" href="../sid/trait.AsSidRef.html" title="trait win_acl_rs::sid::AsSidRef">AsSidRef</a>&lt;'a&gt;,
-    M: <a class="trait" href="https://doc.rust-lang.org/1.90.0/core/convert/trait.Into.html" title="trait core::convert::Into">Into</a>&lt;<a class="struct" href="../mask/struct.AccessMask.html" title="struct win_acl_rs::mask::AccessMask">AccessMask</a>&gt;,</div></h4></section></summary><div class="docblock"><p>Adds an access-denied ACE to the ACL.</p>
+    M: <a class="trait" href="../mask/trait.Mask.html" title="trait win_acl_rs::mask::Mask">Mask</a>,</div></h4></section></summary><div class="docblock"><p>Adds an access-denied ACE to the ACL.</p>
 <p>An access-denied ACE explicitly denies the specified access rights to the given security principal.
 Access-denied ACEs take precedence over access-allowed ACEs.</p>
 <h5 id="arguments-3"><a class="doc-anchor" href="#arguments-3">§</a>Arguments</h5>

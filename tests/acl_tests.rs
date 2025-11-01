@@ -4,10 +4,11 @@ use std::str::FromStr;
 
 use win_acl_rs::{
     acl::{AceType::AccessAllowed, Acl},
-    mask::FileAccess,
+    mask::{FileAccess, Mask},
     sd::SecurityDescriptor,
     sid::{AsSidRef, Sid},
 };
+use windows_sys::Win32::Foundation::GENERIC_ALL;
 
 fn create_sd() -> SecurityDescriptor {
     const TEST_SD_STRING: &str = "O:S-1-5-21-1402048822-409899687-2319524958-1001G:S-1-5-21-1402048822-409899687-2319524958-1001D:(A;ID;FA;;;SY)(A;ID;FA;;;BA)(A;ID;FA;;;S-1-5-21-1402048822-409899687-2319524958-1001)";
@@ -55,7 +56,7 @@ fn test_mask_and_type() {
     let mut acl = Acl::empty().unwrap();
     let mask = FileAccess::READ | FileAccess::WRITE;
     let sid = Sid::from_string("S-1-1-0").unwrap();
-    acl.allow(mask.as_u32(), &sid).unwrap();
+    acl.allow(mask, &sid).unwrap();
 
     assert!(acl.is_valid());
     assert_eq!(acl.ace_count(), 1);
@@ -64,6 +65,13 @@ fn test_mask_and_type() {
 
     assert_eq!(ace.ace_type(), AccessAllowed);
     assert_eq!(ace.mask(), mask.as_u32());
+
+    acl.remove_ace(0).unwrap();
+    acl.allow(0x10000000, &sid).unwrap();
+
+    let ace = acl.into_iter().next().unwrap();
+    assert_eq!(ace.ace_type(), AccessAllowed);
+    assert_eq!(ace.mask(), GENERIC_ALL);
 }
 
 #[test]
@@ -76,7 +84,7 @@ fn test_add_remove_ace() {
     let mask = FileAccess::READ | FileAccess::WRITE;
 
     // Try direct sid reference
-    acl.allow(mask.as_u32(), &sid).unwrap();
+    acl.allow(mask, &sid).unwrap();
 
     assert!(acl.is_valid());
     assert_eq!(acl.ace_count(), 1);
@@ -84,7 +92,7 @@ fn test_add_remove_ace() {
     let mask = FileAccess::EXECUTE;
     let sid_ref = sid.as_sid_ref();
     // Try sid_ref
-    acl.deny(mask.as_u32(), &sid_ref).unwrap();
+    acl.deny(mask, &sid_ref).unwrap();
 
     assert!(acl.is_valid());
     assert_eq!(acl.ace_count(), 2);

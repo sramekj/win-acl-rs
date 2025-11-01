@@ -51,7 +51,7 @@
 <a href=#51 id=51 data-nosnippet>51</a><span class="kw">use crate</span>::{
 <a href=#52 id=52 data-nosnippet>52</a>    assert_free,
 <a href=#53 id=53 data-nosnippet>53</a>    error::WinError,
-<a href=#54 id=54 data-nosnippet>54</a>    mask::AccessMask,
+<a href=#54 id=54 data-nosnippet>54</a>    mask::Mask,
 <a href=#55 id=55 data-nosnippet>55</a>    sid::{AsSidRef, Sid},
 <a href=#56 id=56 data-nosnippet>56</a>    winapi_bool_call,
 <a href=#57 id=57 data-nosnippet>57</a>};
@@ -258,13 +258,13 @@
 <a href=#258 id=258 data-nosnippet>258</a>    </span><span class="kw">pub fn </span>allow&lt;<span class="lifetime">'a</span>, S, M&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>, access_mask: M, sid_ref: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>S) -&gt; <span class="prelude-ty">Result</span>&lt;(), WinError&gt;
 <a href=#259 id=259 data-nosnippet>259</a>    <span class="kw">where
 <a href=#260 id=260 data-nosnippet>260</a>        </span>S: AsSidRef&lt;<span class="lifetime">'a</span>&gt;,
-<a href=#261 id=261 data-nosnippet>261</a>        M: Into&lt;AccessMask&gt;,
+<a href=#261 id=261 data-nosnippet>261</a>        M: Mask,
 <a href=#262 id=262 data-nosnippet>262</a>    {
 <a href=#263 id=263 data-nosnippet>263</a>        <span class="kw">unsafe </span>{
 <a href=#264 id=264 data-nosnippet>264</a>            <span class="macro">winapi_bool_call!</span>(AddAccessAllowedAce(
 <a href=#265 id=265 data-nosnippet>265</a>                <span class="self">self</span>.ptr,
 <a href=#266 id=266 data-nosnippet>266</a>                ACL_REVISION,
-<a href=#267 id=267 data-nosnippet>267</a>                access_mask.into().as_u32(),
+<a href=#267 id=267 data-nosnippet>267</a>                access_mask.as_u32(),
 <a href=#268 id=268 data-nosnippet>268</a>                sid_ref.as_sid_ref().as_ptr() <span class="kw">as _</span>,
 <a href=#269 id=269 data-nosnippet>269</a>            ))
 <a href=#270 id=270 data-nosnippet>270</a>        };
@@ -303,13 +303,13 @@
 <a href=#303 id=303 data-nosnippet>303</a>    </span><span class="kw">pub fn </span>deny&lt;<span class="lifetime">'a</span>, S, M&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>, access_mask: M, sid_ref: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>S) -&gt; <span class="prelude-ty">Result</span>&lt;(), WinError&gt;
 <a href=#304 id=304 data-nosnippet>304</a>    <span class="kw">where
 <a href=#305 id=305 data-nosnippet>305</a>        </span>S: AsSidRef&lt;<span class="lifetime">'a</span>&gt;,
-<a href=#306 id=306 data-nosnippet>306</a>        M: Into&lt;AccessMask&gt;,
+<a href=#306 id=306 data-nosnippet>306</a>        M: Mask,
 <a href=#307 id=307 data-nosnippet>307</a>    {
 <a href=#308 id=308 data-nosnippet>308</a>        <span class="kw">unsafe </span>{
 <a href=#309 id=309 data-nosnippet>309</a>            <span class="macro">winapi_bool_call!</span>(AddAccessDeniedAce(
 <a href=#310 id=310 data-nosnippet>310</a>                <span class="self">self</span>.ptr,
 <a href=#311 id=311 data-nosnippet>311</a>                ACL_REVISION,
-<a href=#312 id=312 data-nosnippet>312</a>                access_mask.into().as_u32(),
+<a href=#312 id=312 data-nosnippet>312</a>                access_mask.as_u32(),
 <a href=#313 id=313 data-nosnippet>313</a>                sid_ref.as_sid_ref().as_ptr() <span class="kw">as _
 <a href=#314 id=314 data-nosnippet>314</a>            </span>))
 <a href=#315 id=315 data-nosnippet>315</a>        };

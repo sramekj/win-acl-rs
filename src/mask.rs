@@ -14,7 +14,7 @@
 //! # Examples
 //!
 //! ```no_run
-//! use win_acl_rs::mask::AccessMask;
+//! use win_acl_rs::mask::{AccessMask, Mask};
 //!
 //! // Use predefined combinations
 //! let read_mask = AccessMask::read();
@@ -85,6 +85,28 @@ macro_rules! bit_ops {
     };
 }
 
+/// A trait for types that can be converted to 32b mask
+///
+/// This trait allows flexible usage of either `AccessMask`, `FileMask`, etc... or 32bit (`u32`, `i32`) raw values as a mask.
+pub trait Mask {
+    /// Converts the mask to a raw `u32` value.
+    ///
+    /// Useful when passing the mask to low-level Windows APIs that expect a `u32`.
+    fn as_u32(&self) -> u32;
+}
+
+impl Mask for u32 {
+    fn as_u32(&self) -> u32 {
+        *self
+    }
+}
+
+impl Mask for i32 {
+    fn as_u32(&self) -> u32 {
+        *self as u32
+    }
+}
+
 /// A bitmask of generic access rights for ACL entries.
 ///
 /// This type provides convenient access to standard Windows access rights that
@@ -97,7 +119,7 @@ macro_rules! bit_ops {
 /// # Examples
 ///
 /// ```no_run
-/// use win_acl_rs::mask::AccessMask;
+/// use win_acl_rs::mask::{AccessMask, Mask};
 ///
 /// // Use predefined combinations
 /// let read_mask = AccessMask::read();
@@ -163,13 +185,6 @@ impl AccessMask {
     pub fn full() -> Self {
         Self::GENERIC_ALL
     }
-
-    /// Converts the access mask to a raw `u32` value.
-    ///
-    /// Useful when passing the mask to low-level Windows APIs that expect a `u32`.
-    pub fn as_u32(self) -> u32 {
-        self.0
-    }
 }
 
 impl From<AccessMask> for u32 {
@@ -187,6 +202,12 @@ impl From<u32> for AccessMask {
 impl From<i32> for AccessMask {
     fn from(value: i32) -> Self {
         AccessMask(value as u32)
+    }
+}
+
+impl Mask for AccessMask {
+    fn as_u32(&self) -> u32 {
+        self.0
     }
 }
 
@@ -212,13 +233,6 @@ impl FileAccess {
     pub const EXECUTE: Self = Self(FILE_GENERIC_EXECUTE);
     /// All file access rights.
     pub const FULL: Self = Self(FILE_ALL_ACCESS);
-
-    /// Converts the file access mask to a raw `u32` value.
-    ///
-    /// Useful when passing the mask to low-level Windows APIs that expect a `u32`.
-    pub fn as_u32(self) -> u32 {
-        self.0
-    }
 }
 
 impl From<FileAccess> for u32 {
@@ -236,6 +250,12 @@ impl From<u32> for FileAccess {
 impl From<i32> for FileAccess {
     fn from(value: i32) -> Self {
         FileAccess(value as u32)
+    }
+}
+
+impl Mask for FileAccess {
+    fn as_u32(&self) -> u32 {
+        self.0
     }
 }
 
@@ -269,13 +289,6 @@ impl RegistryAccess {
     pub const WRITE: Self = Self(KEY_WRITE);
     /// All registry key access rights.
     pub const FULL: Self = Self(KEY_ALL_ACCESS);
-
-    /// Converts the registry access mask to a raw `u32` value.
-    ///
-    /// Useful when passing the mask to low-level Windows APIs that expect a `u32`.
-    pub fn as_u32(self) -> u32 {
-        self.0
-    }
 }
 
 impl From<RegistryAccess> for u32 {
@@ -293,6 +306,12 @@ impl From<u32> for RegistryAccess {
 impl From<i32> for RegistryAccess {
     fn from(value: i32) -> Self {
         RegistryAccess(value as u32)
+    }
+}
+
+impl Mask for RegistryAccess {
+    fn as_u32(&self) -> u32 {
+        self.0
     }
 }
 
@@ -328,13 +347,6 @@ impl ServiceAccess {
     pub const USER_CONTROL: Self = Self(SERVICE_USER_DEFINED_CONTROL);
     /// All service access rights.
     pub const FULL: Self = Self(SERVICE_ALL_ACCESS);
-
-    /// Converts the service access mask to a raw `u32` value.
-    ///
-    /// Useful when passing the mask to low-level Windows APIs that expect a `u32`.
-    pub fn as_u32(self) -> u32 {
-        self.0
-    }
 }
 
 impl From<ServiceAccess> for u32 {
@@ -352,6 +364,12 @@ impl From<u32> for ServiceAccess {
 impl From<i32> for ServiceAccess {
     fn from(value: i32) -> Self {
         ServiceAccess(value as u32)
+    }
+}
+
+impl Mask for ServiceAccess {
+    fn as_u32(&self) -> u32 {
+        self.0
     }
 }
 
@@ -381,13 +399,6 @@ impl PrinterAccess {
     pub const WRITE: Self = Self(PRINTER_WRITE);
     /// All printer access rights.
     pub const FULL: Self = Self(PRINTER_ALL_ACCESS);
-
-    /// Converts the printer access mask to a raw `u32` value.
-    ///
-    /// Useful when passing the mask to low-level Windows APIs that expect a `u32`.
-    pub fn as_u32(self) -> u32 {
-        self.0
-    }
 }
 
 impl From<PrinterAccess> for u32 {
@@ -405,6 +416,12 @@ impl From<u32> for PrinterAccess {
 impl From<i32> for PrinterAccess {
     fn from(value: i32) -> Self {
         PrinterAccess(value as u32)
+    }
+}
+
+impl Mask for PrinterAccess {
+    fn as_u32(&self) -> u32 {
+        self.0
     }
 }
 

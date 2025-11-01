@@ -51,7 +51,7 @@ use windows_sys::Win32::{
 use crate::{
     assert_free,
     error::WinError,
-    mask::AccessMask,
+    mask::Mask,
     sid::{AsSidRef, Sid},
     winapi_bool_call,
 };
@@ -258,13 +258,13 @@ impl Acl {
     pub fn allow<'a, S, M>(&mut self, access_mask: M, sid_ref: &'a S) -> Result<(), WinError>
     where
         S: AsSidRef<'a>,
-        M: Into<AccessMask>,
+        M: Mask,
     {
         unsafe {
             winapi_bool_call!(AddAccessAllowedAce(
                 self.ptr,
                 ACL_REVISION,
-                access_mask.into().as_u32(),
+                access_mask.as_u32(),
                 sid_ref.as_sid_ref().as_ptr() as _,
             ))
         };
@@ -303,13 +303,13 @@ impl Acl {
     pub fn deny<'a, S, M>(&mut self, access_mask: M, sid_ref: &'a S) -> Result<(), WinError>
     where
         S: AsSidRef<'a>,
-        M: Into<AccessMask>,
+        M: Mask,
     {
         unsafe {
             winapi_bool_call!(AddAccessDeniedAce(
                 self.ptr,
                 ACL_REVISION,
-                access_mask.into().as_u32(),
+                access_mask.as_u32(),
                 sid_ref.as_sid_ref().as_ptr() as _
             ))
         };

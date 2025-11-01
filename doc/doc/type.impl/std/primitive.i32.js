@@ -1,9 +1,9 @@
 (function() {
-    var type_impls = Object.fromEntries([["win_acl_rs",[]]]);
+    var type_impls = Object.fromEntries([["win_acl_rs",[["<details class=\"toggle implementors-toggle\" open><summary><section id=\"impl-Mask-for-i32\" class=\"impl\"><a class=\"src rightside\" href=\"src/win_acl_rs/mask.rs.html#104-108\">Source</a><a href=\"#impl-Mask-for-i32\" class=\"anchor\">§</a><h3 class=\"code-header\">impl <a class=\"trait\" href=\"win_acl_rs/mask/trait.Mask.html\" title=\"trait win_acl_rs::mask::Mask\">Mask</a> for <a class=\"primitive\" href=\"https://doc.rust-lang.org/1.90.0/std/primitive.i32.html\">i32</a></h3></section></summary><div class=\"impl-items\"><details class=\"toggle method-toggle\" open><summary><section id=\"method.as_u32\" class=\"method trait-impl\"><a class=\"src rightside\" href=\"src/win_acl_rs/mask.rs.html#105-107\">Source</a><a href=\"#method.as_u32\" class=\"anchor\">§</a><h4 class=\"code-header\">fn <a href=\"win_acl_rs/mask/trait.Mask.html#tymethod.as_u32\" class=\"fn\">as_u32</a>(&amp;self) -&gt; <a class=\"primitive\" href=\"https://doc.rust-lang.org/1.90.0/std/primitive.u32.html\">u32</a></h4></section></summary><div class='docblock'>Converts the mask to a raw <code>u32</code> value. <a href=\"win_acl_rs/mask/trait.Mask.html#tymethod.as_u32\">Read more</a></div></details></div></details>","Mask","win_acl_rs::trustee::TRUSTEE_TYPE","win_acl_rs::wellknown::SID_NAME_USE","win_acl_rs::SE_OBJECT_TYPE"]]],["win_acl_rs",[]]]);
     if (window.register_type_impls) {
         window.register_type_impls(type_impls);
     } else {
         window.pending_type_impls = type_impls;
     }
 })()
-//{"start":55,"fragment_lengths":[17]}
+//{"start":55,"fragment_lengths":[1337,18]}
