@@ -1,4 +1,13 @@
-//! TODO
+//! Security Descriptor operations.
+//!
+//! A security descriptor is a Windows structure that contains the security information for a
+//! securable object (files, registry keys, services, etc.). It includes:
+//! - Owner SID
+//! - Group SID
+//! - DACL (Discretionary Access Control List) - controls access
+//! - SACL (System Access Control List) - controls auditing (requires elevated privileges)
+//!
+//! This module provides safe wrappers for reading, parsing, and converting security descriptors.
 
 #![allow(non_snake_case)]
 
@@ -33,9 +42,40 @@ use crate::{
     winapi_bool_call, winapi_call,
 };
 
+/// A type alias for an unprivileged security descriptor.
+///
+/// This type can read standard security information but cannot access SACL data.
+/// For SACL access, use [`SecurityDescriptorElevated`](crate::elevated::SecurityDescriptorElevated).
 pub type SecurityDescriptor = SecurityDescriptorImpl<Unprivileged>;
 
-/// A Windows security descriptor.
+/// A Windows security descriptor containing security information for a securable object.
+///
+/// Security descriptors include owner, group, DACL (Discretionary ACL), and optionally
+/// SACL (System ACL) information. The type parameter `P` controls privilege level:
+/// - `Unprivileged`: Can access owner, group, and DACL (standard use case)
+/// - `Elevated`: Can also access SACL (requires `SE_SECURITY_NAME` privilege)
+///
+/// # Examples
+///
+/// ```no_run
+/// use win_acl_rs::sd::SecurityDescriptor;
+///
+/// // Read security descriptor from a file
+/// let sd = SecurityDescriptor::from_path("C:\\path\\to\\file.txt")?;
+///
+/// // Get the owner SID
+/// if let Some(owner) = sd.owner_sid() {
+///     println!("Owner: {}", owner.to_string()?);
+/// }
+///
+/// // Iterate over DACL entries
+/// if let Some(dacl) = sd.dacl() {
+///     for ace in &dacl {
+///         println!("ACE: {:?}", ace);
+///     }
+/// }
+/// # Ok::<(), win_acl_rs::error::WinError>(())
+/// ```
 #[must_use]
 pub struct SecurityDescriptorImpl<P: PrivilegeLevel = Unprivileged> {
     sd_ptr: PSECURITY_DESCRIPTOR,
@@ -47,9 +87,18 @@ pub struct SecurityDescriptorImpl<P: PrivilegeLevel = Unprivileged> {
 }
 
 impl SecurityDescriptorImpl<Unprivileged> {
-    /// Upgrades security descriptor to elevated one that has access to SACL, for example
+    /// Upgrades this security descriptor to an elevated one that can access SACL.
     ///
-    /// Is guarded by the existence of elevated token
+    /// Requires an elevated privilege token. The elevated security descriptor can access
+    /// System Access Control Lists (SACLs) which are used for auditing.
+    ///
+    /// # Arguments
+    ///
+    /// * `_token` - An elevated privilege token from `PrivilegeToken::try_elevate()`.
+    ///
+    /// # Returns
+    ///
+    /// An `SecurityDescriptorImpl<Elevated>` that can access SACL information.
     pub fn upgrade(self, _token: &PrivilegeTokenImpl<Elevated>) -> SecurityDescriptorImpl<Elevated> {
         SecurityDescriptorImpl {
             sd_ptr: self.sd_ptr,
@@ -344,6 +393,15 @@ impl<P: PrivilegeLevel> SecurityDescriptorImpl<P> {
         Ok(string.as_string())
     }
 
+    /// Returns the owner SID of the security descriptor.
+    ///
+    /// The owner is the security principal that owns the object and has special permissions
+    /// to modify the security descriptor (e.g., through `WRITE_OWNER` access right).
+    ///
+    /// # Returns
+    ///
+    /// `Some(SidRef)` containing the owner SID if present, or `None` if the security descriptor
+    /// doesn't have an owner.
     pub fn owner_sid(&self) -> Option<SidRef<'_>> {
         if self.owner_sid_ptr.is_null() {
             return None;
@@ -351,6 +409,14 @@ impl<P: PrivilegeLevel> SecurityDescriptorImpl<P> {
         Some(unsafe { SidRef::from_ptr(self.owner_sid_ptr as _) })
     }
 
+    /// Returns the primary group SID of the security descriptor.
+    ///
+    /// The group is the primary security group for the object, used in POSIX-style security models.
+    ///
+    /// # Returns
+    ///
+    /// `Some(SidRef)` containing the group SID if present, or `None` if the security descriptor
+    /// doesn't have a group.
     pub fn group_sid(&self) -> Option<SidRef<'_>> {
         if self.group_sid_ptr.is_null() {
             return None;
@@ -358,6 +424,15 @@ impl<P: PrivilegeLevel> SecurityDescriptorImpl<P> {
         Some(unsafe { SidRef::from_ptr(self.group_sid_ptr as _) })
     }
 
+    /// Returns the DACL (Discretionary Access Control List) of the security descriptor.
+    ///
+    /// The DACL contains ACEs that define who can access the object and what permissions they have.
+    /// If no DACL is present, Windows grants full access to everyone.
+    ///
+    /// # Returns
+    ///
+    /// `Some(Acl)` containing the DACL if present, or `None` if the security descriptor
+    /// doesn't have a DACL.
     pub fn dacl(&self) -> Option<Acl> {
         if self.dacl_ptr.is_null() {
             None

@@ -1,3 +1,23 @@
+//! Well-known Security Identifiers (SIDs).
+//!
+//! This module re-exports well-known SID constants from Windows. Well-known SIDs are predefined
+//! by Windows for common security principals like:
+//! - `WinWorldSid` - Everyone (S-1-1-0)
+//! - `WinBuiltinAdministratorsSid` - Administrators (S-1-5-32-544)
+//! - `WinLocalSystemSid` - SYSTEM (S-1-5-18)
+//! - And many more...
+//!
+//! These SIDs can be used with `Sid::from_well_known_sid()` to create SID instances.
+//!
+//! # Examples
+//!
+//! ```no_run
+//! use win_acl_rs::{sid::Sid, wellknown::WinBuiltinAdministratorsSid};
+//!
+//! let admin_sid = Sid::from_well_known_sid(WinBuiltinAdministratorsSid)?;
+//! # Ok::<(), win_acl_rs::error::WinError>(())
+//! ```
+
 pub use windows_sys::Win32::Security::{
     SID_NAME_USE, WinAccountAdministratorSid, WinAccountCertAdminsSid, WinAccountCloneableControllersSid,
     WinAccountComputersSid, WinAccountControllersSid, WinAccountDefaultSystemManagedSid, WinAccountDomainAdminsSid,

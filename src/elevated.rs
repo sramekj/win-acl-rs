@@ -22,6 +22,11 @@ use crate::{
     winapi_bool_call,
 };
 
+/// A type alias for an elevated security descriptor.
+///
+/// This type can access all security information, including SACLs.
+/// Requires an elevated privilege token to create. See `SecurityDescriptorImpl<Elevated>`
+/// for available methods.
 pub type SecurityDescriptorElevated = SecurityDescriptorImpl<Elevated>;
 
 /// Enables *SeSecurityPrivilege* privilege.
@@ -68,7 +73,28 @@ fn enable_se_security_privilege() -> Result<(), WinError> {
     Ok(())
 }
 
-/// Checks if the current process is running as an Administrator.
+/// Checks if the current process is running with Administrator privileges.
+///
+/// This checks if the process token has the elevation flag set, which indicates
+/// that the process is running with elevated privileges (typically as Administrator).
+///
+/// # Returns
+///
+/// `Ok(true)` if the process is running as Administrator, `Ok(false)` otherwise.
+/// Returns an error if the check cannot be performed.
+///
+/// # Examples
+///
+/// ```no_run
+/// use win_acl_rs::elevated::is_admin;
+///
+/// if is_admin()? {
+///     println!("Running as Administrator");
+/// } else {
+///     println!("Not running as Administrator");
+/// }
+/// # Ok::<(), win_acl_rs::error::WinError>(())
+/// ```
 pub fn is_admin() -> Result<bool, WinError> {
     unsafe {
         let mut token_handle = null_mut();
@@ -96,28 +122,94 @@ pub fn is_admin() -> Result<bool, WinError> {
     }
 }
 
+/// A marker trait for privilege levels.
+///
+/// Types implementing this trait represent different privilege levels for security operations.
+/// This is used as a type parameter to security descriptor types to ensure that elevated
+/// operations (like accessing SACLs) are only performed with proper privileges.
 pub trait PrivilegeLevel {}
+
+/// Marker type representing an unprivileged context.
+///
+/// Security descriptors with this privilege level can access standard security information
+/// (owner, group, DACL) but cannot access SACLs.
 #[derive(Debug)]
 pub struct Unprivileged;
+
+/// Marker type representing an elevated privilege context.
+///
+/// Security descriptors with this privilege level can access all security information,
+/// including SACLs. Requires the `SE_SECURITY_NAME` privilege to be enabled.
 #[derive(Debug)]
 pub struct Elevated;
+
 impl PrivilegeLevel for Unprivileged {}
 impl PrivilegeLevel for Elevated {}
 
-/// Represents the current privilege context.
+/// A type alias for an unprivileged privilege token.
+///
+/// This is the starting point for privilege management. Use `try_elevate()` to obtain
+/// elevated privileges when needed.
 pub type PrivilegeToken = PrivilegeTokenImpl<Unprivileged>;
 
+/// Represents a privilege token with a specific privilege level.
+///
+/// This type is used to ensure that elevated operations (like accessing SACLs) are only
+/// performed with proper privileges. The type parameter `P` indicates the privilege level:
+/// - `Unprivileged`: Standard privileges (can access DACLs)
+/// - `Elevated`: Elevated privileges (can access SACLs, requires `SE_SECURITY_NAME`)
+///
+/// # Examples
+///
+/// ```no_run
+/// use win_acl_rs::elevated::PrivilegeToken;
+///
+/// let token = PrivilegeToken::new();
+/// match token.try_elevate() {
+///     Ok(elevated) => {
+///         // Can now access SACLs
+///         println!("Elevated privileges obtained");
+///     }
+///     Err(e) => {
+///         println!("Failed to elevate: {}", e);
+///     }
+/// }
+/// ```
 #[derive(Debug)]
 pub struct PrivilegeTokenImpl<P: PrivilegeLevel> {
     _marker: PhantomData<P>,
 }
 
 impl PrivilegeTokenImpl<Unprivileged> {
+    /// Creates a new unprivileged token.
+    ///
+    /// This is the starting state for privilege management. Use `try_elevate()` to obtain
+    /// elevated privileges when needed.
     pub fn new() -> Self {
         Self { _marker: PhantomData }
     }
 
-    /// Try to elevate the current process.
+    /// Attempts to elevate privileges to enable access to SACLs.
+    ///
+    /// This enables the `SE_SECURITY_NAME` privilege, which is required to read or modify
+    /// System Access Control Lists (SACLs). The process typically needs to be running as
+    /// Administrator for this to succeed.
+    ///
+    /// # Returns
+    ///
+    /// `Ok(PrivilegeTokenImpl<Elevated>)` if elevation succeeds, or an error if it fails
+    /// (e.g., process is not running as Administrator, or privilege cannot be enabled).
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use win_acl_rs::elevated::PrivilegeToken;
+    ///
+    /// let token = PrivilegeToken::new();
+    /// let elevated = token.try_elevate()?;
+    /// // Now can access SACLs
+    /// # Ok::<(), win_acl_rs::error::WinError>(())
+    /// ```
     pub fn try_elevate(self) -> Result<PrivilegeTokenImpl<Elevated>, WinError> {
         enable_se_security_privilege()?;
         Ok(PrivilegeTokenImpl { _marker: PhantomData })
@@ -131,7 +223,14 @@ impl Default for PrivilegeTokenImpl<Unprivileged> {
 }
 
 impl PrivilegeTokenImpl<Elevated> {
-    /// Drop back to unprivileged state.
+    /// Drops elevated privileges and returns to an unprivileged state.
+    ///
+    /// This disables the `SE_SECURITY_NAME` privilege and returns an unprivileged token.
+    /// Useful for security best practices - only hold elevated privileges when needed.
+    ///
+    /// # Returns
+    ///
+    /// An `PrivilegeTokenImpl<Unprivileged>` representing the unprivileged state.
     pub fn drop_privileges(self) -> PrivilegeTokenImpl<Unprivileged> {
         PrivilegeTokenImpl::new()
     }
