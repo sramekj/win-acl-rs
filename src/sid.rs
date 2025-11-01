@@ -270,7 +270,7 @@ impl Sid {
     where
         S: AsRef<str>,
     {
-        unsafe { lookup_account_name(name).map(|a| Self::from_string(&a.name).unwrap()) }
+        unsafe { lookup_account_name(name).map(|a| Self::from_string(&a.name))? }
     }
 
     /// Looks up the account name and domain for this SID.

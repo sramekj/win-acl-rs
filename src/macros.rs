@@ -45,7 +45,7 @@ macro_rules! winapi_call {
         let result = $expr;
         if result != windows_sys::Win32::Foundation::ERROR_SUCCESS {
             $cleanup
-            rreturn core::result::Result::Err(result.into());
+            return core::result::Result::Err(result.into());
         }
     }};
     ($expr:expr) => {{
