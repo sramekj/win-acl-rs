@@ -21,7 +21,7 @@ use windows_sys::{
             Authorization::{
                 ConvertSecurityDescriptorToStringSecurityDescriptorW,
                 ConvertStringSecurityDescriptorToSecurityDescriptorW, GetNamedSecurityInfoW, SDDL_REVISION_1,
-                SE_FILE_OBJECT, SE_OBJECT_TYPE,
+                SE_FILE_OBJECT, SE_OBJECT_TYPE, SetNamedSecurityInfoW,
             },
             DACL_SECURITY_INFORMATION, GROUP_SECURITY_INFORMATION, GetSecurityDescriptorDacl,
             GetSecurityDescriptorGroup, GetSecurityDescriptorOwner, GetSecurityDescriptorSacl,
@@ -150,6 +150,18 @@ impl SecurityDescriptorImpl<Unprivileged> {
     {
         let wide_string = WideCString::new(handle.as_ref());
         Self::create_sd(
+            wide_string.as_ptr(),
+            object_type,
+            OBJECT_SECURITY_INFORMATION::get_safe(),
+        )
+    }
+
+    pub fn persist<S>(&self, handle: S, object_type: SE_OBJECT_TYPE) -> Result<(), WinError>
+    where
+        S: AsRef<str>,
+    {
+        let wide_string = WideCString::new(handle.as_ref());
+        self.persist_sd(
             wide_string.as_ptr(),
             object_type,
             OBJECT_SECURITY_INFORMATION::get_safe(),
@@ -473,6 +485,26 @@ impl<P: PrivilegeLevel> SecurityDescriptorImpl<P> {
             group_sid_ptr,
             _priv: PhantomData,
         })
+    }
+
+    pub(crate) fn persist_sd(
+        &self,
+        obj_name: PCWSTR,
+        obj_type: SE_OBJECT_TYPE,
+        flags: OBJECT_SECURITY_INFORMATION,
+    ) -> Result<(), WinError> {
+        unsafe {
+            winapi_call!(SetNamedSecurityInfoW(
+                obj_name,
+                obj_type,
+                flags,
+                self.owner_sid_ptr,
+                self.group_sid_ptr,
+                self.dacl_ptr,
+                self.sacl_ptr
+            ))
+        };
+        Ok(())
     }
 }
 

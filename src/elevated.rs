@@ -288,4 +288,16 @@ impl SecurityDescriptorImpl<Elevated> {
             OBJECT_SECURITY_INFORMATION::get_all(),
         )
     }
+
+    pub fn persist<S>(&self, handle: S, object_type: SE_OBJECT_TYPE) -> Result<(), WinError>
+    where
+        S: AsRef<str>,
+    {
+        let wide_string = WideCString::new(handle.as_ref());
+        self.persist_sd(
+            wide_string.as_ptr(),
+            object_type,
+            OBJECT_SECURITY_INFORMATION::get_all(),
+        )
+    }
 }

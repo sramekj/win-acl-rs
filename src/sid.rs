@@ -46,7 +46,7 @@ use windows_sys::Win32::{
 use crate::{
     assert_free,
     error::WinError,
-    sid::account::{AccountLookup, lookup_account_name, lookup_account_sid},
+    sid::account::{AccountLookup, current_user_sid, lookup_account_name, lookup_account_sid},
     trustee::Trustee,
     utils::WideCString,
     winapi_bool_call,
@@ -279,6 +279,10 @@ impl Sid {
         S: AsRef<str>,
     {
         unsafe { lookup_account_name(name).map(|a| Self::from_string(&a.name))? }
+    }
+
+    pub fn from_logged_in_user() -> Result<Self, WinError> {
+        current_user_sid()
     }
 
     /// Looks up the account name and domain for this SID.
@@ -584,7 +588,14 @@ impl<'a> Debug for SidRef<'a> {
 }
 
 pub mod account {
-    use windows_sys::Win32::Security::{LookupAccountNameW, LookupAccountSidW, SID_NAME_USE};
+    use windows_sys::Win32::{
+        Foundation::{CloseHandle, HANDLE},
+        Security::{
+            GetTokenInformation, LookupAccountNameW, LookupAccountSidW, SID_NAME_USE, TOKEN_QUERY, TOKEN_USER,
+            TokenUser,
+        },
+        System::Threading::{GetCurrentProcess, OpenProcessToken},
+    };
 
     use super::*;
 
@@ -731,5 +742,42 @@ pub mod account {
             domain: String::from_utf16_lossy(&domain_buf[..domain_size as usize]),
             sid_type,
         })
+    }
+
+    pub(crate) fn current_user_sid() -> Result<Sid, WinError> {
+        unsafe {
+            let mut token: HANDLE = null_mut();
+
+            winapi_bool_call!(OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &mut token,));
+
+            let mut size_needed = 0u32;
+            GetTokenInformation(token, TokenUser, null_mut(), 0, &mut size_needed);
+            if size_needed == 0 {
+                CloseHandle(token);
+                return Err(GetLastError().into());
+            }
+
+            let mut buffer = vec![0u8; size_needed as usize];
+            winapi_bool_call!(
+                GetTokenInformation(
+                    token,
+                    TokenUser,
+                    buffer.as_mut_ptr() as *mut _,
+                    size_needed,
+                    &mut size_needed,
+                ),
+                {
+                    CloseHandle(token);
+                }
+            );
+
+            let token_user = &*(buffer.as_ptr() as *const TOKEN_USER);
+            let sid_ptr = token_user.User.Sid;
+            let sid_ref = SidRef::from_ptr(sid_ptr as _);
+            let sid = Sid::from_bytes(&sid_ref.to_vec())?;
+
+            CloseHandle(token);
+            Ok(sid)
+        }
     }
 }
