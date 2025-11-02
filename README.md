@@ -30,31 +30,29 @@ A simple and safe abstraction over Windows ACLs (Access Control Lists) and secur
 
     // SCENARIO 1: add FULL access for currently logged user to a given printer ACL
     // get a Security Descriptor of a printer
-    let sd  = SecurityDescriptor::from_handle("My printer", SE_PRINTER).unwrap();
+    let sd  = SecurityDescriptor::from_handle("My printer", SE_PRINTER)?;
     // get a logged-in user
-    let user_sid = Sid::from_logged_in_user().unwrap();
-    let mut dacl = sd.dacl().unwrap();
+    let user_sid = Sid::from_logged_in_user()?;
+    let mut dacl = sd.dacl()?;
     // ensure permissions are added
-    dacl.ensure_permissions(&user_sid, PrinterAccess::FULL, AccessAllowed)
-        .unwrap();
+    dacl.ensure_permissions(&user_sid, PrinterAccess::FULL, AccessAllowed)?;
     // now, it should contain those permissions
     assert!(dacl.has_permissions(&user_sid, PrinterAccess::FULL, AccessAllowed));
     // finally, store the modified Security Descriptor
-    sd.persist("My printer", SE_PRINTER).unwrap();
+    sd.persist("My printer", SE_PRINTER)?;
 
     // SCENARIO 2: remove FULL access for currently logged user from a given printer ACL
     // get a Security Descriptor of a printer
-    let sd  = SecurityDescriptor::from_handle("My printer", SE_PRINTER).unwrap();
+    let sd  = SecurityDescriptor::from_handle("My printer", SE_PRINTER)?;
     // get a logged-in user
-    let user_sid = Sid::from_logged_in_user().unwrap();
-    let mut dacl = sd.dacl().unwrap();
+    let user_sid = Sid::from_logged_in_user()?;
+    let mut dacl = sd.dacl()?;
     // ensure permissions are removed
-    dacl.remove_permission(&user_sid, PrinterAccess::FULL, AccessAllowed)
-        .unwrap();
+    dacl.remove_permission(&user_sid, PrinterAccess::FULL, AccessAllowed)?;
     // now, it should not contain those permissions
     assert!(!dacl.has_permissions(&user_sid, PrinterAccess::FULL, AccessAllowed));
     // finally, store the modified Security Descriptor
-    sd.persist("My printer", SE_PRINTER).unwrap();
+    sd.persist("My printer", SE_PRINTER)?;
 ```
 
 ### Working with SIDs
