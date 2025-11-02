@@ -61,6 +61,8 @@ fn test_sid_clone() {
 fn test_well_known() {
     let sid = Sid::from_well_known_sid(WinAnonymousSid).unwrap();
     assert!(sid.is_valid());
+
+    println!("{:?}", sid);
 }
 
 #[test]
@@ -69,4 +71,21 @@ fn test_lookup() {
     assert!(sid.is_valid());
     let lookup = sid.lookup_name().unwrap();
     assert_eq!(lookup.name, "SYSTEM");
+}
+
+#[test]
+fn test_logged_on_user() {
+    let sid = Sid::from_logged_in_user().unwrap();
+    assert!(sid.is_valid());
+}
+
+#[test]
+fn test_is_same() {
+    let sid1 = "S-1-5-7".parse::<Sid>().unwrap();
+    let sid2 = Sid::from_well_known_sid(WinAnonymousSid).unwrap();
+
+    assert!(sid1.is_valid());
+    assert!(sid2.is_valid());
+
+    assert!(sid1.is_same_as(&sid2));
 }

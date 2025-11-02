@@ -3,7 +3,11 @@
 use std::str::FromStr;
 
 use tempfile::NamedTempFile;
-use win_acl_rs::{SE_PRINTER, elevated::is_admin, error::Result, sd::SecurityDescriptor};
+use win_acl_rs::{
+    SE_PRINTER, acl::AceType::AccessAllowed, elevated::is_admin, error::Result, mask::FileAccess,
+    sd::SecurityDescriptor, sid::Sid,
+};
+use windows_sys::Win32::Security::Authorization::SE_FILE_OBJECT;
 
 fn create_test_descriptor() -> Result<SecurityDescriptor> {
     let path = NamedTempFile::new().unwrap().into_temp_path();
@@ -103,4 +107,41 @@ fn test_sd_sacl_present() {
 
     let sacl_present = sd.sacl_present().unwrap();
     assert!(!sacl_present);
+}
+
+#[test]
+fn test_persistence() {
+    let path = NamedTempFile::new().unwrap().into_temp_path();
+    assert!(path.exists());
+    let sd = SecurityDescriptor::from_path(&path).unwrap();
+
+    let user_sid = Sid::from_logged_in_user().unwrap();
+
+    assert!(sd.is_valid());
+    assert!(user_sid.is_valid());
+    assert!(sd.dacl().is_some());
+
+    let mut dacl = sd.dacl().unwrap();
+    let has_full_access = dacl.has_permissions(&user_sid, FileAccess::FULL, AccessAllowed);
+    assert!(has_full_access);
+
+    dacl.remove_permission(&user_sid, FileAccess::FULL, AccessAllowed)
+        .unwrap();
+    let has_full_access = dacl.has_permissions(&user_sid, FileAccess::FULL, AccessAllowed);
+    assert!(!has_full_access);
+
+    dacl.ensure_permissions(&user_sid, FileAccess::WRITE, AccessAllowed)
+        .unwrap();
+
+    sd.persist(path.as_os_str().to_string_lossy(), SE_FILE_OBJECT).unwrap();
+
+    let new_sd = SecurityDescriptor::from_path(&path).unwrap();
+    assert!(new_sd.is_valid());
+    assert!(new_sd.dacl().is_some());
+
+    let dacl = new_sd.dacl().unwrap();
+    let has_write_access = dacl.has_permissions(&user_sid, FileAccess::WRITE, AccessAllowed);
+
+    println!("has_write_access: {}", has_write_access);
+    assert!(has_write_access);
 }
