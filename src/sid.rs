@@ -389,6 +389,13 @@ impl Sid {
         self.data.clone()
     }
 
+    /// Compares this SID to another SID for equality using `EqualSid`.
+    ///
+    /// Accepts any type that can be viewed as a `SidRef` (e.g., `&Sid`, `SidRef`, `&SidRef`).
+    ///
+    /// # Returns
+    ///
+    /// `true` if both SIDs are equal; `false` otherwise.
     pub fn is_same_as<'a, S>(&self, sid_ref: &'a S) -> bool
     where
         S: AsSidRef<'a>,
@@ -544,6 +551,13 @@ impl<'a> SidRef<'a> {
         self.ptr
     }
 
+    /// Compares this SID reference to another SID for equality using `EqualSid`.
+    ///
+    /// Accepts any type that can be viewed as a `SidRef` (e.g., `&Sid`, `SidRef`, `&SidRef`).
+    ///
+    /// # Returns
+    ///
+    /// `true` if both SIDs are equal; `false` otherwise.
     pub fn is_same_as<S>(&self, sid_ref: &'a S) -> bool
     where
         S: AsSidRef<'a>,

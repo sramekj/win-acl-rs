@@ -119,6 +119,10 @@ impl SecurityDescriptorImpl<Unprivileged> {
     /// # Returns
     ///
     /// A `SecurityDescriptor` on success.
+    /// Reads the security descriptor for a filesystem path using `GetNamedSecurityInfoW`.
+    ///
+    /// This is a convenience wrapper for file and directory objects.
+    /// It retrieves owner, group, and DACL information by default.
     pub fn from_path<P>(path: P) -> Result<Self, WinError>
     where
         P: AsRef<Path>,
@@ -132,14 +136,18 @@ impl SecurityDescriptorImpl<Unprivileged> {
         )
     }
 
-    /// Creates a SecurityDescriptor from object name and object type.
+    /// Reads the security descriptor for a named Windows object via `GetNamedSecurityInfoW`.
+    ///
+    /// Use this overload to read SDs for non-filesystem objects such as registry keys,
+    /// printers, services, shares, etc. For filesystem paths, prefer [`Self::from_path`].
     ///
     /// # Arguments
     ///
-    /// * `handle` - name of the object. This could be many things (path to the file or directory, to network share, name of the printer, registry key, ...)
-    /// * `object_type` - a type of the object
+    /// * `handle` - Name/identifier of the object (e.g., registry path, printer name).
+    /// * `object_type` - The [`SE_OBJECT_TYPE`] specifying the object kind.
     ///
-    /// see [MSDN](https://learn.microsoft.com/en-us/windows/win32/api/accctrl/ne-accctrl-se_object_type)
+    /// See [MSDN](https://learn.microsoft.com/en-us/windows/win32/api/accctrl/ne-accctrl-se_object_type)
+    /// for supported object types.
     ///
     /// # Returns
     ///
@@ -156,6 +164,15 @@ impl SecurityDescriptorImpl<Unprivileged> {
         )
     }
 
+    /// Persists the current security descriptor to a named object using `SetNamedSecurityInfoW`.
+    ///
+    /// This writes owner, group, and DACL (and SACL for elevated descriptors) back to the
+    /// target object specified by `handle` and `object_type`.
+    ///
+    /// # Arguments
+    ///
+    /// * `handle` - Name of the target object (e.g., filesystem path, registry key, printer name).
+    /// * `object_type` - The [`SE_OBJECT_TYPE`] identifying the kind of object.
     pub fn persist<S>(&self, handle: S, object_type: SE_OBJECT_TYPE) -> Result<(), WinError>
     where
         S: AsRef<str>,
@@ -251,6 +268,10 @@ impl<P: PrivilegeLevel> SecurityDescriptorImpl<P> {
     }
 
     /// Indicates a security descriptor that has a DACL. If this flag is not set, or if this flag is set and the DACL is NULL, the security descriptor allows full access to everyone.
+    /// Returns whether a DACL is present in this security descriptor.
+    ///
+    /// If a DACL is not present, the object is treated as granting full access to everyone.
+    /// This method queries the security descriptor using `GetSecurityDescriptorDacl`.
     pub fn dacl_present(&self) -> Result<bool, WinError> {
         let mut _dacl_ptr: *mut ACL = null_mut();
         let mut dacl_present: BOOL = 0;

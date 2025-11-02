@@ -85,15 +85,40 @@ macro_rules! bit_ops {
     };
 }
 
-/// A trait for types that can be converted to 32b mask
+/// A trait for types that can be converted to a 32‑bit access mask.
 ///
-/// This trait allows flexible usage of either `AccessMask`, `FileMask`, etc... or 32bit (`u32`, `i32`) raw values as a mask.
+/// This trait allows flexible usage of either strongly‑typed masks (e.g., `AccessMask`,
+/// `FileAccess`, `RegistryAccess`) or raw 32‑bit values (`u32`, `i32`) wherever an access
+/// mask is required.
+///
+/// # Examples
+///
+/// ```no_run
+/// use win_acl_rs::mask::{AccessMask, Mask};
+///
+/// let read = AccessMask::read();
+/// let write = AccessMask::write();
+/// let full = AccessMask::full();
+///
+/// // Check inclusion using `contains`
+/// assert!(full.contains(read));
+/// assert!(!read.contains(write));
+///
+/// // Convert to raw value
+/// let raw: u32 = read.as_u32();
+/// assert_ne!(raw, 0);
+/// ```
 pub trait Mask {
     /// Converts the mask to a raw `u32` value.
     ///
     /// Useful when passing the mask to low-level Windows APIs that expect a `u32`.
     fn as_u32(&self) -> u32;
 
+    /// Returns true if `self` contains all bits set in `other`.
+    ///
+    /// This is a convenience helper for checking whether one access mask fully
+    /// covers another. It is equivalent to:
+    /// `self.as_u32() & other.as_u32() == other.as_u32()`.
     fn contains(self, other: Self) -> bool;
 }
 

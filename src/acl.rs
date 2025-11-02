@@ -336,6 +336,13 @@ impl Acl {
         Ok(())
     }
 
+    /// Returns true if the ACL contains an allow ACE for `sid_ref` that covers `access_mask`.
+    ///
+    /// This performs a simple check over the current ACEs and does not evaluate inheritance
+    /// or object-type specific semantics. Access-deny ACEs are not considered here.
+    ///
+    /// For convenience, `access_mask` can be any type implementing `Mask` (e.g. `AccessMask`,
+    /// `FileAccess`, `RegistryAccess`) or a raw `u32`.
     pub fn has_permissions<'a, S, M>(&self, sid_ref: &'a S, access_mask: M) -> bool
     where
         S: AsSidRef<'a>,
@@ -349,10 +356,18 @@ impl Acl {
         })
     }
 
+    /// Returns an iterator over the ACEs in this ACL.
+    ///
+    /// The iterator yields `Ace` items in order. If ACL information cannot
+    /// be retrieved, the iterator will be empty.
     pub fn iter(&self) -> AclIter<'_> {
         self.into_iter()
     }
 
+    /// Ensures that `sid_ref` has at least `access_mask` allowed in this ACL.
+    ///
+    /// If no existing allow ACE for `sid_ref` covers `access_mask`, a new allow ACE is added.
+    /// This helper does not attempt to merge with existing ACEs beyond this check.
     pub fn ensure_permissions<'a, S, M>(&mut self, sid_ref: &'a S, access_mask: M) -> Result<(), WinError>
     where
         S: AsSidRef<'a>,
@@ -364,6 +379,10 @@ impl Acl {
         Ok(())
     }
 
+    /// Removes ACEs for `sid_ref` that fully cover `access_mask`.
+    ///
+    /// Any ACE whose mask contains all bits from `access_mask` will be removed. The removal
+    /// is performed from the end to keep indices valid.
     pub fn remove_permission<'a, S, M>(&mut self, sid_ref: &'a S, access_mask: M) -> Result<(), WinError>
     where
         S: AsSidRef<'a>,

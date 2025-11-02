@@ -58,6 +58,10 @@ acl.allow(AccessMask::read(), &admin_sid)?;
 use win_acl_rs::mask::FileAccess;
 acl.allow(FileAccess::READ, &everyone_sid)?;
 
+// Check whether an ACL grants at least the requested permissions
+assert!(acl.has_permissions(&everyone_sid, FileAccess::READ));
+assert!(!acl.has_permissions(&everyone_sid, FileAccess::WRITE));
+
 // Iterate over ACEs
 for ace in &acl {
     let sid = ace.sid()?;
