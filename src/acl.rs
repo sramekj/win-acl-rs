@@ -258,7 +258,7 @@ impl Acl {
     pub fn allow<'a, S, M>(&mut self, access_mask: M, sid_ref: &'a S) -> Result<(), WinError>
     where
         S: AsSidRef<'a>,
-        M: Mask,
+        M: Mask + Copy,
     {
         unsafe {
             winapi_bool_call!(AddAccessAllowedAce(
@@ -303,7 +303,7 @@ impl Acl {
     pub fn deny<'a, S, M>(&mut self, access_mask: M, sid_ref: &'a S) -> Result<(), WinError>
     where
         S: AsSidRef<'a>,
-        M: Mask,
+        M: Mask + Copy,
     {
         unsafe {
             winapi_bool_call!(AddAccessDeniedAce(
@@ -333,6 +333,57 @@ impl Acl {
         unsafe {
             winapi_bool_call!(DeleteAce(self.ptr, index));
         }
+        Ok(())
+    }
+
+    pub fn has_permissions<'a, S, M>(&self, sid_ref: &'a S, access_mask: M) -> bool
+    where
+        S: AsSidRef<'a>,
+        M: Mask + Copy,
+    {
+        let sid_ref = sid_ref.as_sid_ref();
+
+        self.iter().any(|ace| {
+            ace.sid()
+                .is_ok_and(|sid| sid.is_same_as(&sid_ref) && ace.mask().contains(access_mask.as_u32()))
+        })
+    }
+
+    pub fn iter(&self) -> AclIter<'_> {
+        self.into_iter()
+    }
+
+    pub fn ensure_permissions<'a, S, M>(&mut self, sid_ref: &'a S, access_mask: M) -> Result<(), WinError>
+    where
+        S: AsSidRef<'a>,
+        M: Mask + Copy,
+    {
+        if !self.has_permissions(sid_ref, access_mask) {
+            self.allow(access_mask, sid_ref)?
+        }
+        Ok(())
+    }
+
+    pub fn remove_permission<'a, S, M>(&mut self, sid_ref: &'a S, access_mask: M) -> Result<(), WinError>
+    where
+        S: AsSidRef<'a>,
+        M: Mask + Copy,
+    {
+        let mut to_remove = Vec::new();
+        for (index, ace) in self.iter().enumerate() {
+            if ace.sid().is_ok_and(|sid| sid.is_same_as(sid_ref)) {
+                let mask = ace.mask();
+
+                if mask.contains(access_mask.as_u32()) {
+                    to_remove.push(index as u32);
+                }
+            }
+        }
+        // Remove in reverse order to preserve index validity
+        for index in to_remove.into_iter().rev() {
+            self.remove_ace(index)?;
+        }
+
         Ok(())
     }
 }

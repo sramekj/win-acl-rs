@@ -93,17 +93,27 @@ pub trait Mask {
     ///
     /// Useful when passing the mask to low-level Windows APIs that expect a `u32`.
     fn as_u32(&self) -> u32;
+
+    fn contains(self, other: Self) -> bool;
 }
 
 impl Mask for u32 {
     fn as_u32(&self) -> u32 {
         *self
     }
+
+    fn contains(self, other: Self) -> bool {
+        (self.as_u32() & other.as_u32()) == other.as_u32()
+    }
 }
 
 impl Mask for i32 {
     fn as_u32(&self) -> u32 {
         *self as u32
+    }
+
+    fn contains(self, other: Self) -> bool {
+        (self.as_u32() & other.as_u32()) == other.as_u32()
     }
 }
 
@@ -209,6 +219,10 @@ impl Mask for AccessMask {
     fn as_u32(&self) -> u32 {
         self.0
     }
+
+    fn contains(self, other: Self) -> bool {
+        (self.as_u32() & other.as_u32()) == other.as_u32()
+    }
 }
 
 bit_ops!(AccessMask);
@@ -256,6 +270,10 @@ impl From<i32> for FileAccess {
 impl Mask for FileAccess {
     fn as_u32(&self) -> u32 {
         self.0
+    }
+
+    fn contains(self, other: Self) -> bool {
+        (self.as_u32() & other.as_u32()) == other.as_u32()
     }
 }
 
@@ -312,6 +330,10 @@ impl From<i32> for RegistryAccess {
 impl Mask for RegistryAccess {
     fn as_u32(&self) -> u32 {
         self.0
+    }
+
+    fn contains(self, other: Self) -> bool {
+        (self.as_u32() & other.as_u32()) == other.as_u32()
     }
 }
 
@@ -371,6 +393,10 @@ impl Mask for ServiceAccess {
     fn as_u32(&self) -> u32 {
         self.0
     }
+
+    fn contains(self, other: Self) -> bool {
+        (self.as_u32() & other.as_u32()) == other.as_u32()
+    }
 }
 
 bit_ops!(ServiceAccess);
@@ -422,6 +448,10 @@ impl From<i32> for PrinterAccess {
 impl Mask for PrinterAccess {
     fn as_u32(&self) -> u32 {
         self.0
+    }
+
+    fn contains(self, other: Self) -> bool {
+        (self.as_u32() & other.as_u32()) == other.as_u32()
     }
 }
 

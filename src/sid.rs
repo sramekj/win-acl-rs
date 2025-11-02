@@ -38,7 +38,7 @@ use windows_sys::Win32::{
     Foundation::{ERROR_OUTOFMEMORY, FALSE, GetLastError},
     Security::{
         Authorization::{ConvertSidToStringSidW, ConvertStringSidToSidW},
-        CreateWellKnownSid, GetLengthSid, IsValidSid, PSID, SECURITY_MAX_SID_SIZE, SID, WELL_KNOWN_SID_TYPE,
+        CreateWellKnownSid, EqualSid, GetLengthSid, IsValidSid, PSID, SECURITY_MAX_SID_SIZE, SID, WELL_KNOWN_SID_TYPE,
     },
     System::Memory::{LMEM_FIXED, LocalAlloc},
 };
@@ -384,6 +384,13 @@ impl Sid {
     pub fn to_vec(&self) -> Vec<u8> {
         self.data.clone()
     }
+
+    pub fn is_same_as<'a, S>(&self, sid_ref: &'a S) -> bool
+    where
+        S: AsSidRef<'a>,
+    {
+        unsafe { EqualSid(self.data.as_ptr() as PSID, sid_ref.as_sid_ref().ptr as PSID) != FALSE }
+    }
 }
 
 impl<'a> AsSidRef<'a> for Sid {
@@ -531,6 +538,13 @@ impl<'a> SidRef<'a> {
     /// A pointer to the SID structure. The pointer is valid for the lifetime `'a`.
     pub fn as_ptr(&self) -> *const SID {
         self.ptr
+    }
+
+    pub fn is_same_as<S>(&self, sid_ref: &'a S) -> bool
+    where
+        S: AsSidRef<'a>,
+    {
+        unsafe { EqualSid(self.ptr as PSID, sid_ref.as_sid_ref().ptr as PSID) != FALSE }
     }
 }
 
