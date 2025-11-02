@@ -4,10 +4,14 @@ use std::str::FromStr;
 
 use tempfile::NamedTempFile;
 use win_acl_rs::{
-    SE_PRINTER, acl::AceType::AccessAllowed, elevated::is_admin, error::Result, mask::FileAccess,
-    sd::SecurityDescriptor, sid::Sid,
+    SE_FILE_OBJECT, SE_PRINTER,
+    acl::AceType::AccessAllowed,
+    elevated::is_admin,
+    error::Result,
+    mask::{FileAccess, PrinterAccess},
+    sd::SecurityDescriptor,
+    sid::Sid,
 };
-use windows_sys::Win32::Security::Authorization::SE_FILE_OBJECT;
 
 fn create_test_descriptor() -> Result<SecurityDescriptor> {
     let path = NamedTempFile::new().unwrap().into_temp_path();
